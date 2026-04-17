@@ -1,0 +1,17 @@
+# Python / Flask
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.env
+*.egg-info/
+instance/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
