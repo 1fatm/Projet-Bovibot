@@ -3,240 +3,1194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BoviBot — Assistant IA Élevage Bovin</title>
+<title>BoviBot — Gestion Bovine IA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #f5f0e8; color: #1a202c; }
-  header { background: #7c4f1e; color: white; padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
-  header h1 { font-size: 1.4rem; }
-  .container { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
-  .card { background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem; }
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-  .stat { background: #fdf6ec; border-radius: 8px; padding: 0.8rem; text-align: center; }
-  .stat .val { font-size: 1.8rem; font-weight: bold; color: #7c4f1e; }
-  .stat .lbl { font-size: 0.75rem; color: #64748b; }
-  .stat.critical .val { color: #dc2626; }
-  .chat-box { height: 380px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: #fafaf8; }
-  .msg { margin-bottom: 0.8rem; }
-  .msg.user .bubble { background: #7c4f1e; color: white; margin-left: auto; }
-  .msg.bot .bubble { background: white; border: 1px solid #e2e8f0; }
-  .msg.confirm .bubble { background: #fef9c3; border: 2px solid #f59e0b; }
-  .bubble { display: inline-block; padding: 0.6rem 1rem; border-radius: 12px; max-width: 85%; font-size: 0.9rem; line-height: 1.5; }
-  .msg.user { text-align: right; }
-  .confirm-btns { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-  .btn-oui { background: #16a34a; color: white; border: none; border-radius: 6px; padding: 0.4rem 1rem; cursor: pointer; font-size: 0.9rem; }
-  .btn-non { background: #dc2626; color: white; border: none; border-radius: 6px; padding: 0.4rem 1rem; cursor: pointer; font-size: 0.9rem; }
-  .chat-input { display: flex; gap: 0.5rem; }
-  .chat-input input { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.95rem; outline: none; }
-  .chat-input input:focus { border-color: #7c4f1e; }
-  .chat-input button { background: #7c4f1e; color: white; border: none; border-radius: 8px; padding: 0.7rem 1.2rem; cursor: pointer; }
-  .suggestions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
-  .suggestions button { background: #fdf6ec; color: #7c4f1e; border: 1px solid #d4a76a; border-radius: 20px; padding: 0.3rem 0.8rem; font-size: 0.78rem; cursor: pointer; }
-  .suggestions button:hover { background: #fde9c9; }
-  .sql-preview { background: #1e293b; color: #94a3b8; font-family: monospace; font-size: 0.75rem; padding: 0.5rem; border-radius: 6px; margin-top: 0.4rem; white-space: pre-wrap; }
-  .results table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-  .results th { background: #7c4f1e; color: white; padding: 0.5rem; text-align: left; }
-  .results td { padding: 0.45rem 0.5rem; border-bottom: 1px solid #e2e8f0; }
-  .results tr:hover td { background: #fdf6ec; }
-  h2 { font-size: 1rem; color: #374151; margin-bottom: 0.8rem; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
-  .badge-green { background: #dcfce7; color: #166534; }
-  .badge-orange { background: #fff7ed; color: #9a3412; }
-  .badge-red { background: #fee2e2; color: #991b1b; }
-  .alerte-item { padding: 0.5rem 0.8rem; border-radius: 6px; margin-bottom: 0.4rem; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
-  .alerte-critical { background: #fee2e2; border-left: 4px solid #dc2626; }
-  .alerte-warning  { background: #fff7ed; border-left: 4px solid #f59e0b; }
-  .alerte-info     { background: #eff6ff; border-left: 4px solid #3b82f6; }
-  .alerte-item button { background: none; border: none; cursor: pointer; font-size: 1rem; }
+:root {
+  --green-900: #0f2d1a;
+  --green-800: #1a4228;
+  --green-700: #1e5231;
+  --green-600: #236b3e;
+  --green-100: #e8f5ee;
+  --green-50:  #f2faf5;
+  --amber:       #f5a623;
+  --amber-light: #fdf3de;
+  --red:         #dc2626;
+  --red-light:   #fef2f2;
+  --orange:      #d97706;
+  --orange-light:#fffbeb;
+  --blue:        #2563eb;
+  --blue-light:  #eff6ff;
+  --gray-50:  #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --white: #ffffff;
+  --sidebar-w: 256px;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+  --font: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+button,input,select{font-family:var(--font)}
+body{font-family:var(--font);background:var(--gray-50);color:var(--gray-900);display:flex;height:100vh;overflow:hidden;font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:var(--green-900);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sb-logo{display:flex;align-items:center;gap:12px;padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-icon{width:42px;height:42px;background:var(--amber);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.sb-p{font-size:11.5px;color:rgba(255,255,255,.38);margin-top:2px}
+.nav-wrap{padding:18px 12px 8px;flex:1}
+.nav-lbl{font-size:10px;font-weight:600;color:rgba(255,255,255,.27);letter-spacing:1.2px;text-transform:uppercase;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:rgba(255,255,255,.55);transition:all .14s;margin-bottom:2px;user-select:none}
+.nav-item svg{width:17px;height:17px;flex-shrink:0}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.87)}
+.nav-item.active{background:rgba(255,255,255,.11);color:#fff}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+.sb-footer{padding:14px 12px;border-top:1px solid rgba(255,255,255,.07)}
+
+/* ── DARK MODE TOGGLE ── */
+.dark-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:9px;cursor:pointer;transition:background .14s;gap:10px}
+.dark-toggle:hover{background:rgba(255,255,255,.07)}
+.dark-toggle-label{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.6)}
+.dark-toggle-label svg{width:16px;height:16px;flex-shrink:0}
+.toggle-track{width:38px;height:22px;background:rgba(255,255,255,.18);border-radius:20px;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-track.on{background:var(--amber)}
+.toggle-thumb{width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle-track.on .toggle-thumb{transform:translateX(16px)}
+
+/* ── DARK MODE ── */
+body.dark{
+  --white:#1e2530;
+  --gray-50:#161b24;
+  --gray-100:#232c3a;
+  --gray-200:#2d3848;
+  --gray-300:#3d4f65;
+  --gray-400:#5d7896;
+  --gray-500:#8aa4bf;
+  --gray-600:#adc3d8;
+  --gray-700:#c8d8e8;
+  --gray-800:#dce8f2;
+  --gray-900:#eef4fa;
+  --green-50:#0e2318;
+  --green-100:#153320;
+  --green-700:#4caf7a;
+  --green-600:#5dc98c;
+  --shadow:0 1px 4px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:0 4px 20px rgba(0,0,0,.5);
+  --red-light:#3a1515;
+  --orange-light:#2e1d08;
+  --blue-light:#0e1f3a;
+  --amber-light:#2a1f06;
+}
+body.dark .sidebar{background:#0d1a10}
+body.dark .tag-chip{background:rgba(76,175,122,.18);color:#4caf7a}
+body.dark .badge.success{background:rgba(76,175,122,.18);color:#4caf7a}
+body.dark .bubble{background:var(--gray-100)}
+body.dark .msg-row.user .bubble{background:#2a5c40;color:#fff}
+body.dark .sql-block{background:#0d1117}
+body.dark .confirm-card{background:#1a1608;border-color:var(--amber)}
+body.dark .confirm-card p{color:var(--gray-700)}
+body.dark .search-inp{background:var(--gray-100);color:var(--gray-900)}
+body.dark .filter-sel{background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-200)}
+body.dark .btn-no{background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-300)}
+body.dark .btn-outline{background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-200)}
+body.dark .btn-outline:hover{background:var(--gray-200)}
+body.dark .atab{background:var(--gray-100);color:var(--gray-500)}
+body.dark .atab.active{background:var(--white);border-color:var(--gray-200)}
+body.dark .modal-box{background:#1a2332}
+body.dark .modal-opt{border-color:var(--gray-200)}
+body.dark .modal-opt:hover{background:var(--gray-100)}
+body.dark .chat-inp{background:var(--gray-100);color:var(--gray-900);border-color:var(--gray-200)}
+body.dark .chat-inp:focus{background:var(--gray-200)}
+body.dark .gene-tree{background:var(--white)}
+body.dark .gene-node{background:var(--green-50);border-color:var(--green-100)}
+body.dark .gene-node.subject{background:var(--green-100);border-color:var(--green-600)}
+body.dark .gene-node .gn-tag{color:var(--green-700)}
+body.dark thead th{background:var(--gray-100)}
+body.dark tbody tr:hover{background:var(--gray-100)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;background:var(--white);border-bottom:1px solid var(--gray-200);display:flex;align-items:center;padding:0 26px;gap:10px;flex-shrink:0}
+.topbar-title{font-size:14px;font-weight:500;color:var(--gray-500)}
+.status-pill{margin-left:auto;display:flex;align-items:center;gap:6px;background:var(--green-50);border:1px solid var(--green-100);border-radius:20px;padding:5px 12px}
+.sdot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.stxt{font-size:12px;font-weight:500;color:var(--green-700)}
+.content{flex:1;overflow-y:auto;padding:28px 30px}
+
+/* ── PAGE HEADER ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.ph-title{font-size:22px;font-weight:700;letter-spacing:-.4px}
+.ph-sub{font-size:14px;color:var(--gray-500);margin-top:3px}
+.ph-right{display:flex;align-items:center;gap:8px}
+.ph-date{font-size:13px;color:var(--gray-400);display:flex;align-items:center;gap:5px;margin-top:4px}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);transition:box-shadow .2s,transform .2s}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.kpi-lbl{font-size:13.5px;color:var(--gray-500);font-weight:500}
+.kpi-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-ic svg{width:19px;height:19px}
+.kpi-val{font-size:30px;font-weight:700;letter-spacing:-.6px;color:var(--gray-900)}
+.kpi-sub{font-size:12.5px;color:var(--gray-400);margin-top:5px}
+
+/* ── CHARTS ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.cc-title{font-size:15px;font-weight:600;color:var(--gray-800)}
+.cc-sub{font-size:13px;color:var(--gray-400);margin-top:2px;margin-bottom:16px}
+.chart-wrap{position:relative;height:185px}
+
+/* ── PANELS ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.p-title{font-size:15px;font-weight:600;color:var(--gray-800)}
+.p-sub{font-size:13px;color:var(--gray-400);margin-top:2px;margin-bottom:14px}
+
+/* mini rows */
+.mini-alert{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100)}
+.mini-alert:last-child{border-bottom:none}
+.mini-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mini-dot.critical{background:var(--red)}
+.mini-dot.warning{background:var(--orange)}
+.mini-dot.info{background:var(--blue)}
+.mini-txt{flex:1}
+.mini-title{font-size:13.5px;font-weight:500}
+.mini-desc{font-size:12px;color:var(--gray-400);margin-top:1px}
+.mini-gest{padding:9px 0;border-bottom:1px solid var(--gray-100)}
+.mini-gest:last-child{border-bottom:none}
+.mg-row{display:flex;justify-content:space-between;align-items:center}
+.mg-name{font-size:13.5px;font-weight:600}
+.mg-days{font-size:13px;font-weight:700}
+.mg-sub{font-size:12px;color:var(--gray-400);margin-top:2px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px}
+.badge.critical{background:var(--red-light);color:var(--red)}
+.badge.warning{background:var(--orange-light);color:var(--orange)}
+.badge.info{background:var(--blue-light);color:var(--blue)}
+.badge.success{background:var(--green-100);color:var(--green-700)}
+.badge.gray{background:var(--gray-100);color:var(--gray-600)}
+.tag-chip{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--green-700);background:var(--green-100);padding:2px 7px;border-radius:5px}
+.type-chip{display:inline-flex;align-items:center;font-size:12px;font-weight:500;color:var(--gray-500);background:var(--gray-100);border:1px solid var(--gray-200);padding:2px 9px;border-radius:20px}
+
+/* ── CHAT ── */
+.chat-layout{display:grid;grid-template-columns:1fr 280px;gap:14px;height:calc(100vh - 52px - 110px)}
+.chat-main{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);display:flex;flex-direction:column;box-shadow:var(--shadow);overflow:hidden}
+.chat-chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 15px;border-bottom:1px solid var(--gray-100)}
+.chip{display:flex;align-items:center;gap:5px;background:var(--white);border:1px solid var(--gray-200);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--gray-500);cursor:pointer;transition:all .14s}
+.chip svg{width:13px;height:13px}
+.chip:hover{border-color:var(--green-600);color:var(--green-700);background:var(--green-50)}
+.chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.msg-row{display:flex;gap:10px;max-width:88%}
+.msg-row.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-av{width:34px;height:34px;border-radius:50%;background:var(--green-100);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.msg-av svg{width:17px;height:17px;color:var(--green-700)}
+.msg-row.user .msg-av{background:var(--gray-200)}
+.msg-row.user .msg-av svg{color:var(--gray-600)}
+.bubble{background:var(--gray-100);border-radius:12px 12px 12px 3px;padding:12px 15px;font-size:14px;line-height:1.55}
+.msg-row.user .bubble{background:var(--green-700);color:#fff;border-radius:12px 12px 3px 12px}
+.msg-time{font-size:11.5px;color:var(--gray-300);margin-top:4px}
+.sql-block{background:#1e293b;color:#94a3b8;font-family:var(--font-mono);font-size:12px;padding:9px 11px;border-radius:6px;margin-top:8px;white-space:pre-wrap}
+.confirm-card{background:#fffdf5;border:1px solid var(--amber);border-radius:10px;padding:14px;margin-top:8px}
+.confirm-card p{font-size:13.5px;color:var(--gray-700);margin-bottom:11px;line-height:1.5}
+.confirm-btns{display:flex;gap:7px}
+.btn-yes{background:var(--green-700);color:#fff;border:none;padding:7px 16px;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .14s}
+.btn-yes:hover{background:var(--green-600)}
+.btn-no{background:var(--white);color:var(--gray-600);border:1px solid var(--gray-300);padding:7px 16px;border-radius:7px;font-size:13.5px;font-weight:500;cursor:pointer}
+.results-tbl{margin-top:10px;overflow-x:auto;border-radius:8px;border:1px solid var(--gray-200)}
+.results-tbl table{width:100%;border-collapse:collapse;font-size:13px}
+.results-tbl th{background:var(--green-700);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.4px;text-transform:uppercase}
+.results-tbl td{padding:9px 12px;border-bottom:1px solid var(--gray-100)}
+.results-tbl tr:last-child td{border-bottom:none}
+.results-tbl tbody tr:hover td{background:var(--gray-50)}
+.chat-bar{padding:13px 15px;border-top:1px solid var(--gray-200);display:flex;gap:8px;align-items:center}
+.chat-inp{flex:1;border:1px solid var(--gray-200);border-radius:9px;padding:11px 15px;font-size:14px;outline:none;background:var(--gray-50);color:var(--gray-900);transition:border-color .14s}
+.chat-inp:focus{border-color:var(--green-600);background:var(--white)}
+.send-btn{width:42px;height:42px;background:var(--green-700);border:none;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;transition:background .14s;flex-shrink:0}
+.send-btn:hover{background:var(--green-600)}
+.send-btn svg{width:17px;height:17px}
+.sug-item{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid var(--gray-200);border-radius:9px;cursor:pointer;margin-bottom:7px;transition:all .14s}
+.sug-item:hover{border-color:var(--green-600);background:var(--green-50)}
+.sug-ic{width:32px;height:32px;border-radius:7px;background:var(--green-100);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sug-ic svg{width:15px;height:15px;color:var(--green-700)}
+.sug-t{font-size:13.5px;font-weight:600}
+.sug-d{font-size:12px;color:var(--gray-400);margin-top:2px;line-height:1.4}
+
+/* ── ANIMAUX TABLE ── */
+.tbl-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.tbl-toolbar{display:flex;align-items:center;gap:9px;padding:14px 17px;border-bottom:1px solid var(--gray-100)}
+.search-inp{flex:1;border:1px solid var(--gray-200);border-radius:8px;padding:9px 13px;font-size:14px;outline:none;background:var(--gray-50)}
+.search-inp:focus{border-color:var(--green-600)}
+.filter-sel{border:1px solid var(--gray-200);border-radius:8px;padding:9px 12px;font-size:14px;outline:none;color:var(--gray-600);background:var(--white)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--gray-50);padding:11px 15px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--gray-400);border-bottom:1px solid var(--gray-200)}
+tbody tr{border-bottom:1px solid var(--gray-100);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:var(--gray-50)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:13px 15px;font-size:14px;color:var(--gray-700)}
+
+/* ── ALERTES PAGE ── */
+.alert-filters{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:13px 17px;display:flex;align-items:center;gap:8px;margin-bottom:8px;box-shadow:var(--shadow)}
+.filter-lbl{font-size:13.5px;color:var(--gray-400);display:flex;align-items:center;gap:5px}
+.filter-lbl svg{width:14px;height:14px}
+.alert-tabs-row{display:flex;gap:7px;margin-bottom:0}
+.atab{display:flex;align-items:center;gap:6px;padding:8px 15px;border-radius:20px;font-size:13.5px;font-weight:500;cursor:pointer;color:var(--gray-500);background:var(--gray-100);border:none;transition:all .14s}
+.atab svg{width:14px;height:14px}
+.atab.active{background:var(--white);color:var(--gray-800);font-weight:600;box-shadow:var(--shadow);border:1px solid var(--gray-200)}
+.atab-n{font-size:11px;font-weight:700;background:var(--green-100);color:var(--green-700);padding:1px 6px;border-radius:10px}
+.atab.active .atab-n{background:var(--gray-100);color:var(--gray-600)}
+.alerts-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.alert-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:17px 19px;display:flex;align-items:flex-start;gap:14px;box-shadow:var(--shadow);transition:box-shadow .15s}
+.alert-card:hover{box-shadow:var(--shadow-md)}
+.ac-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ac-ic svg{width:20px;height:20px}
+.ac-ic.critical{background:var(--red-light);color:var(--red)}
+.ac-ic.warning{background:var(--orange-light);color:var(--orange)}
+.ac-ic.info{background:var(--blue-light);color:var(--blue)}
+.ac-body{flex:1;min-width:0}
+.ac-title{font-size:14.5px;font-weight:600;color:var(--gray-900)}
+.ac-desc{font-size:13px;color:var(--gray-500);margin-top:3px;line-height:1.45}
+.ac-meta{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+.ac-mi{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--gray-400)}
+.ac-mi svg{width:13px;height:13px}
+.ac-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.btn-traiter{background:var(--green-700);color:#fff;border:none;padding:7px 15px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:background .14s}
+.btn-traiter:hover{background:var(--green-600)}
+.btn-more{width:30px;height:30px;border:1px solid var(--gray-200);border-radius:7px;background:none;display:flex;align-items:center;justify-content:center;color:var(--gray-400);cursor:pointer;transition:background .14s}
+.btn-more:hover{background:var(--gray-100)}
+.btn-more svg{width:14px;height:14px}
+
+/* ── REPRODUCTION ── */
+.gest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+.gest-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);transition:box-shadow .2s}
+.gest-card:hover{box-shadow:var(--shadow-md)}
+.gc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.gc-name{font-size:18px;font-weight:700}
+.gc-tag{font-size:12px;color:var(--gray-400);margin-top:2px;font-family:var(--font-mono)}
+.progress-bar{height:5px;background:var(--gray-200);border-radius:20px;overflow:hidden;margin:14px 0 5px}
+.progress-fill{height:100%;background:var(--green-700);border-radius:20px}
+.progress-lbl{display:flex;justify-content:space-between;font-size:12px;margin-bottom:12px;color:var(--gray-400)}
+.progress-lbl span:last-child{font-weight:600;color:var(--green-700)}
+.gc-row{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--gray-100)}
+.gc-row:last-of-type{border-bottom:none}
+.gc-row span:first-child{color:var(--gray-400)}
+.gc-row span:last-child{font-weight:500}
+
+/* ── GENEALOGIE ── */
+.gene-search{display:flex;gap:10px;margin-bottom:18px}
+.gene-search input{flex:1;border:1px solid var(--gray-200);border-radius:9px;padding:10px 14px;font-size:14px;outline:none;background:var(--gray-50)}
+.gene-search input:focus{border-color:var(--green-600)}
+.gene-search button{background:var(--green-700);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
+.gene-tree{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);overflow-x:auto;min-height:300px}
+.gene-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.gene-row{display:flex;gap:20px;align-items:center;justify-content:center}
+.gene-node{background:var(--green-50);border:2px solid var(--green-100);border-radius:10px;padding:12px 18px;text-align:center;min-width:130px}
+.gene-node.subject{background:var(--green-100);border-color:var(--green-600)}
+.gene-node .gn-tag{font-family:var(--font-mono);font-size:11.5px;color:var(--green-700);margin-bottom:3px}
+.gene-node .gn-name{font-size:14px;font-weight:600}
+.gene-node .gn-info{font-size:12px;color:var(--gray-400);margin-top:2px}
+.gene-line{width:2px;height:24px;background:var(--gray-300);margin:0 auto}
+.gene-hline{display:flex;align-items:center;gap:0}
+.gene-connector{height:2px;background:var(--gray-300);flex:1}
+.gene-lbl{font-size:11px;color:var(--gray-400);text-align:center;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.gene-section{margin-bottom:24px}
+.gene-section-title{font-size:13.5px;font-weight:600;color:var(--gray-600);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* ── BUTTONS ── */
+.btn-primary{background:var(--green-700);color:#fff;border:none;padding:10px 17px;border-radius:9px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;transition:background .14s}
+.btn-primary:hover{background:var(--green-600)}
+.btn-primary svg{width:15px;height:15px}
+.btn-outline{background:var(--white);color:var(--gray-700);border:1px solid var(--gray-300);padding:10px 17px;border-radius:9px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;cursor:pointer;transition:all .14s}
+.btn-outline:hover{border-color:var(--gray-400);background:var(--gray-50)}
+.btn-outline svg{width:15px;height:15px}
+
+/* ── MISC ── */
+.page{display:none}
+.page.active{display:block}
+.empty{text-align:center;padding:32px;color:var(--gray-400);font-size:13.5px}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px}
+.typing{display:flex;gap:4px;align-items:center;padding:2px 0}
+.typing span{width:7px;height:7px;background:var(--gray-400);border-radius:50%;animation:tb 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+
+/* ── PDF MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal-box{background:var(--white);border-radius:16px;padding:28px;width:420px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.modal-sub{font-size:13.5px;color:var(--gray-500);margin-bottom:20px}
+.modal-options{display:flex;flex-direction:column;gap:9px;margin-bottom:20px}
+.modal-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--gray-200);border-radius:10px;cursor:pointer;transition:all .14s}
+.modal-opt:hover{border-color:var(--green-600);background:var(--green-50)}
+.modal-opt input{accent-color:var(--green-700)}
+.modal-opt-info{flex:1}
+.modal-opt-title{font-size:14px;font-weight:500}
+.modal-opt-desc{font-size:12px;color:var(--gray-400);margin-top:1px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body>
-<header>
-  <span style="font-size:2rem">🐄</span>
-  <div><h1>BoviBot</h1><small>Assistant IA — Gestion d'Élevage Bovin</small></div>
-</header>
 
-<div class="container">
-  <!-- Colonne gauche -->
-  <div>
-    <div class="card">
-      <h2>📊 Tableau de bord</h2>
-      <div class="stats-grid" id="stats">
-        <div class="stat"><div class="val" id="s-actifs">—</div><div class="lbl">Animaux actifs</div></div>
-        <div class="stat"><div class="val" id="s-gestation">—</div><div class="lbl">En gestation</div></div>
-        <div class="stat"><div class="val" id="s-alertes">—</div><div class="lbl">Alertes actives</div></div>
-        <div class="stat critical"><div class="val" id="s-critical">—</div><div class="lbl">Alertes critiques</div></div>
-        <div class="stat"><div class="val" id="s-ventes">—</div><div class="lbl">Ventes ce mois</div></div>
-        <div class="stat"><div class="val" id="s-ca">—</div><div class="lbl">CA mois (FCFA)</div></div>
-      </div>
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-icon">
+      <!-- Traces de sabots de vache (2 ongles réalistes) -->
+      <svg width="26" height="26" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Empreinte avant-gauche -->
+        <ellipse cx="18" cy="16" rx="7" ry="10" rx="6.5" ry="9.5" fill="#1a4228" transform="rotate(-10 18 16)"/>
+        <ellipse cx="29" cy="14" rx="6" ry="9" fill="#1a4228" transform="rotate(10 29 14)"/>
+        <!-- Empreinte arrière-droite -->
+        <ellipse cx="51" cy="40" rx="6.5" ry="9.5" fill="#1a4228" transform="rotate(-10 51 40)"/>
+        <ellipse cx="62" cy="38" rx="6" ry="9" fill="#1a4228" transform="rotate(10 62 38)"/>
+        <!-- Empreinte avant-droite (outline) -->
+        <ellipse cx="52" cy="10" rx="6.5" ry="9.5" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(-10 52 10)"/>
+        <ellipse cx="63" cy="8" rx="6" ry="9" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(10 63 8)"/>
+        <!-- Empreinte arrière-gauche (outline) -->
+        <ellipse cx="17" cy="42" rx="6.5" ry="9.5" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(-10 17 42)"/>
+        <ellipse cx="28" cy="40" rx="6" ry="9" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(10 28 40)"/>
+      </svg>
     </div>
-
-    <div class="card">
-      <h2>⚠️ Alertes récentes</h2>
-      <div id="alertes-list"><p style="color:#94a3b8;font-size:0.85rem">Chargement...</p></div>
-    </div>
-
-    <div class="card">
-      <h2>🍼 Gestations en cours</h2>
-      <div id="gestations-list"><p style="color:#94a3b8;font-size:0.85rem">Chargement...</p></div>
+    <div>
+      <div class="sb-h1">BoviBot</div>
+      <div class="sb-p">Gestion Bovine IA</div>
     </div>
   </div>
 
-  <!-- Colonne droite : Chat -->
-  <div class="card">
-    <h2>💬 Assistant BoviBot</h2>
-    <div class="suggestions">
-      <button onclick="ask('Liste tous les animaux actifs avec leur âge et GMQ')">Troupeau complet</button>
-      <button onclick="ask('Quels animaux ont un GMQ inférieur à 0.3 kg/jour ?')">GMQ faibles</button>
-      <button onclick="ask('Quelles femelles sont en gestation et quand vêlent-elles ?')">Gestations</button>
-      <button onclick="ask('Quels animaux n\'ont pas été vaccinés depuis 6 mois ?')">Vaccinations</button>
-      <button onclick="ask('Enregistre une pesée de 325 kg pour TAG-001 aujourd\'hui')">Saisir pesée</button>
-      <button onclick="ask('Quel est le coût total d\'alimentation ce mois-ci ?')">Coût alim.</button>
+  <nav class="nav-wrap">
+    <div class="nav-lbl">Navigation</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Tableau de Bord
     </div>
+    <div class="nav-item" onclick="navigate('chat',this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      Chat IA
+    </div>
+    <div class="nav-item" onclick="navigate('animaux',this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Animaux
+    </div>
+    <div class="nav-item" onclick="navigate('alertes',this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Alertes
+      <span class="nav-badge" id="nav-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('reproduction',this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      Reproduction
+    </div>
+    <div class="nav-item" onclick="navigate('genealogie',this)">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      Généalogie
+    </div>
+  </nav>
 
-    <div class="chat-box" id="chat-box">
-      <div class="msg bot">
-        <div class="bubble">🐄 Bonjour ! Je suis BoviBot.<br>Posez vos questions sur votre troupeau ou demandez-moi d'enregistrer une pesée, une vente...</div>
+  <div class="sb-footer">
+    <div class="dark-toggle" onclick="toggleDark()">
+      <div class="dark-toggle-label">
+        <svg id="theme-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <span id="theme-label">Mode sombre</span>
+      </div>
+      <div class="toggle-track" id="toggle-track">
+        <div class="toggle-thumb"></div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">Tableau de Bord</span>
+    <div class="ph-right" style="margin-left:auto;gap:8px;display:flex">
+      <button class="btn-outline" onclick="openPdfModal()" style="padding:6px 14px;font-size:13px">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Exporter PDF
+      </button>
+      <div class="status-pill">
+        <div class="sdot"></div>
+        <span class="stxt" id="stxt">Connecté</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Tableau de Bord</div>
+          <div class="ph-sub">Vue d'ensemble de votre troupeau</div>
+        </div>
+        <div class="ph-date">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span id="cur-date"></span>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-lbl">Total</div>
+            <div class="kpi-ic" style="background:var(--green-100)">
+              <svg viewBox="0 0 60 60" fill="none"><ellipse cx="30" cy="38" rx="9" ry="12" fill="#1e5231"/><line x1="30" y1="27" x2="30" y2="49" stroke="white" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="16" cy="21" rx="5.5" ry="7.5" fill="#1e5231" transform="rotate(-14 16 21)"/><ellipse cx="44" cy="21" rx="5.5" ry="7.5" fill="#1e5231" transform="rotate(14 44 21)"/><ellipse cx="13" cy="36" rx="4" ry="5.5" fill="#1e5231" transform="rotate(-8 13 36)"/><ellipse cx="47" cy="36" rx="4" ry="5.5" fill="#1e5231" transform="rotate(8 47 36)"/></svg>
+            </div>
+          </div>
+          <div class="kpi-val" id="s-actifs">—</div>
+          <div class="kpi-sub" id="s-actifs-sub">chargement…</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-lbl">En Santé</div>
+            <div class="kpi-ic" style="background:var(--green-100)">
+              <svg fill="none" viewBox="0 0 24 24" stroke="#1e5231" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-val" id="s-sante">—</div>
+          <div class="kpi-sub">animaux en bonne santé</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-lbl">En Gestation</div>
+            <div class="kpi-ic" style="background:var(--orange-light)">
+              <svg fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+          </div>
+          <div class="kpi-val" id="s-gestation">—</div>
+          <div class="kpi-sub">gestations actives</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <div class="kpi-lbl">Malades</div>
+            <div class="kpi-ic" style="background:var(--red-light)">
+              <svg fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+          </div>
+          <div class="kpi-val" id="s-critical" style="color:var(--red)">—</div>
+          <div class="kpi-sub">alertes critiques actives</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="cc-title">Répartition du Troupeau</div>
+          <div class="cc-sub">Distribution mâles / femelles</div>
+          <div class="chart-wrap"><canvas id="repartChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="cc-title">État des Alertes</div>
+          <div class="cc-sub">Alertes actives par niveau de criticité</div>
+          <div class="chart-wrap"><canvas id="alertChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="p-title">Alertes Récentes</div>
+          <div class="p-sub">Dernières notifications</div>
+          <div id="dash-alertes"><p class="empty">Chargement…</p></div>
+        </div>
+        <div class="panel">
+          <div class="p-title">Gestations en Cours</div>
+          <div class="p-sub">Vêlages à surveiller</div>
+          <div id="dash-gestations"><p class="empty">Chargement…</p></div>
+        </div>
       </div>
     </div>
 
-    <div class="chat-input">
-      <input type="text" id="user-input" placeholder="Ex: Quel animal a le meilleur GMQ ce mois ?" onkeypress="if(event.key==='Enter') sendMessage()">
-      <button onclick="sendMessage()">Envoyer ➤</button>
+    <!-- ══ CHAT ══ -->
+    <div class="page" id="page-chat">
+      <div class="ph">
+        <div>
+          <div class="ph-title">Chat IA</div>
+          <div class="ph-sub">Interrogez votre base de données en langage naturel</div>
+        </div>
+      </div>
+      <div class="chat-layout">
+        <div class="chat-main">
+          <div class="chat-chips">
+            <button class="chip" onclick="ask('Liste tous les animaux actifs avec leur âge et GMQ')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>Troupeau</button>
+            <button class="chip" onclick="ask('Quels animaux ont un GMQ inférieur à 0.3 kg/jour ?')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>GMQ faibles</button>
+            <button class="chip" onclick="ask('Quelles femelles sont en gestation ?')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/></svg>Gestations</button>
+            <button class="chip" onclick="ask('Quels animaux n\'ont pas été vaccinés depuis 6 mois ?')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Vaccinations</button>
+            <button class="chip" onclick="ask('Quel est le coût total d\'alimentation ce mois-ci ?')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Coûts</button>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg-row">
+              <div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+              <div><div class="bubble">Bonjour, je suis <strong>BoviBot</strong>.<br>Posez vos questions sur votre troupeau ou demandez-moi d'enregistrer une pesée ou une vente.</div><div class="msg-time">Maintenant</div></div>
+            </div>
+          </div>
+          <div class="chat-bar">
+            <input class="chat-inp" id="user-input" type="text" placeholder="Ex : Quel animal a le meilleur GMQ ce mois ?" onkeypress="if(event.key==='Enter')sendMessage()">
+            <button class="send-btn" onclick="sendMessage()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg></button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+          <div class="panel" style="flex:1">
+            <div class="p-title">Questions Suggérées</div>
+            <div class="p-sub" style="margin-bottom:12px">Exemples de requêtes</div>
+            <div class="sug-item" onclick="ask('Quels sont les animaux les plus lourds du troupeau ?')">
+              <div class="sug-ic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg></div>
+              <div><div class="sug-t">Poids du troupeau</div><div class="sug-d">Classement par poids actuel</div></div>
+            </div>
+            <div class="sug-item" onclick="ask('Quels animaux ont un GMQ inférieur à 0.3 kg/jour ?')">
+              <div class="sug-ic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg></div>
+              <div><div class="sug-t">GMQ insuffisant</div><div class="sug-d">Animaux à croissance faible</div></div>
+            </div>
+            <div class="sug-item" onclick="ask('Quelles femelles vêlent dans les 30 prochains jours ?')">
+              <div class="sug-ic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+              <div><div class="sug-t">Vêlages imminents</div><div class="sug-d">Naissances dans les 30 jours</div></div>
+            </div>
+            <div class="sug-item" onclick="ask('Quel est le coût total de l\'alimentation ce mois ?')">
+              <div class="sug-ic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg></div>
+              <div><div class="sug-t">Budget alimentation</div><div class="sug-d">Coût du mois en cours</div></div>
+            </div>
+            <div class="sug-item" onclick="ask('Enregistre une pesée de 325 kg pour TAG-001 aujourd\'hui')">
+              <div class="sug-ic"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
+              <div><div class="sug-t">Saisir une pesée</div><div class="sug-d">Enregistrement via action IA</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div id="results-section" style="margin-top:1rem;display:none">
-      <h2>📋 Résultats</h2>
-      <div class="results" id="results-table"></div>
+    <!-- ══ ANIMAUX ══ -->
+    <div class="page" id="page-animaux">
+      <div class="ph">
+        <div><div class="ph-title">Gestion des Animaux</div><div class="ph-sub">Troupeau chargé depuis la base de données</div></div>
+      </div>
+      <div class="tbl-card">
+        <div class="tbl-toolbar">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--gray-400);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+          <input class="search-inp" type="text" placeholder="Rechercher par tag, nom, race…" oninput="filterTable(this.value)">
+          <select class="filter-sel" onchange="filterBySexe(this.value)"><option value="">Tous les sexes</option><option value="F">Femelles</option><option value="M">Mâles</option></select>
+        </div>
+        <div id="animaux-tbl"><p class="empty">Chargement des animaux…</p></div>
+      </div>
+    </div>
+
+    <!-- ══ ALERTES ══ -->
+    <div class="page" id="page-alertes">
+      <div class="ph">
+        <div><div class="ph-title">Alertes &amp; Notifications</div><div class="ph-sub">Gérez les alertes de santé de votre troupeau</div></div>
+        <div class="ph-right">
+          <button class="btn-outline"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>Configurer Alertes</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid" style="margin-bottom:16px">
+        <div class="kpi-card"><div class="kpi-top"><div class="kpi-lbl">Total Actives</div><div class="kpi-ic" style="background:var(--orange-light)"><svg fill="none" viewBox="0 0 24 24" stroke="#d97706" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div></div><div class="kpi-val" id="a-total">—</div></div>
+        <div class="kpi-card"><div class="kpi-top"><div class="kpi-lbl">Urgentes</div><div class="kpi-ic" style="background:var(--red-light)"><svg fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div></div><div class="kpi-val" id="a-urgent" style="color:var(--red)">—</div></div>
+        <div class="kpi-card"><div class="kpi-top"><div class="kpi-lbl">Vaccinations</div><div class="kpi-ic" style="background:var(--green-100)"><svg fill="none" viewBox="0 0 24 24" stroke="#1e5231" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div></div><div class="kpi-val" id="a-vacc">—</div></div>
+        <div class="kpi-card"><div class="kpi-top"><div class="kpi-lbl">Résolues (7j)</div><div class="kpi-ic" style="background:var(--green-100)"><svg fill="none" viewBox="0 0 24 24" stroke="#1e5231" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div></div><div class="kpi-val" id="a-resolues" style="color:var(--green-700)">—</div></div>
+      </div>
+
+      <div class="alert-filters">
+        <span class="filter-lbl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>Filtrer par :</span>
+        <select class="filter-sel" id="f-type" onchange="renderAlertes()"><option value="">Tous les types</option><option value="vaccination">Vaccination</option><option value="traitement">Traitement</option><option value="examen">Examen</option></select>
+        <select class="filter-sel" id="f-niveau" onchange="renderAlertes()"><option value="">Toutes priorités</option><option value="critical">Critique</option><option value="warning">Warning</option><option value="info">Info</option></select>
+      </div>
+
+      <div class="alert-tabs-row">
+        <button class="atab active" id="tab-a-btn" onclick="switchAlertTab('attente')">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          En Attente <span class="atab-n" id="tab-a-n">—</span>
+        </button>
+        <button class="atab" id="tab-r-btn" onclick="switchAlertTab('resolues')">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Résolues <span class="atab-n" id="tab-r-n">—</span>
+        </button>
+      </div>
+
+      <div class="alerts-list" id="alertes-list"><p class="empty">Chargement des alertes…</p></div>
+    </div>
+
+    <!-- ══ REPRODUCTION ══ -->
+    <div class="page" id="page-reproduction">
+      <div class="ph">
+        <div><div class="ph-title">Gestion de la Reproduction</div><div class="ph-sub">Gestations en cours et vêlages à venir</div></div>
+        <!-- Pas de bouton "Nouvel enregistrement" — géré via le Chat IA -->
+      </div>
+      <div class="gest-grid" id="gest-grid"><p class="empty">Chargement des gestations…</p></div>
+    </div>
+
+    <!-- ══ GENEALOGIE (BONUS) ══ -->
+    <div class="page" id="page-genealogie">
+      <div class="ph">
+        <div><div class="ph-title">Arbre Généalogique</div><div class="ph-sub">Visualisez les liens de parenté entre animaux</div></div>
+        <button class="btn-outline" onclick="exportGenealogiePdf()">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Exporter PDF
+        </button>
+      </div>
+
+      <div class="gene-search">
+        <input type="text" id="gene-input" placeholder="Entrez le tag de l'animal (ex : TAG-001)…" onkeypress="if(event.key==='Enter')loadGenealogy()">
+        <button onclick="loadGenealogy()">Rechercher</button>
+      </div>
+
+      <div class="gene-tree" id="gene-tree">
+        <p class="empty" style="margin-top:40px">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="40" height="40" style="color:var(--gray-300);display:block;margin:0 auto 12px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+          Entrez le tag d'un animal pour afficher son arbre généalogique
+        </p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══ PDF MODAL ══ -->
+<div id="pdf-modal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closePdfModal()">
+  <div class="modal-box">
+    <div class="modal-title">Exporter en PDF</div>
+    <div class="modal-sub">Choisissez les données à inclure dans le rapport</div>
+    <div class="modal-options">
+      <label class="modal-opt">
+        <input type="checkbox" id="pdf-dashboard" checked>
+        <div class="modal-opt-info">
+          <div class="modal-opt-title">Tableau de bord</div>
+          <div class="modal-opt-desc">KPIs, statistiques globales du troupeau</div>
+        </div>
+      </label>
+      <label class="modal-opt">
+        <input type="checkbox" id="pdf-animaux" checked>
+        <div class="modal-opt-info">
+          <div class="modal-opt-title">Liste des animaux</div>
+          <div class="modal-opt-desc">Tag, race, âge, poids, GMQ, statut</div>
+        </div>
+      </label>
+      <label class="modal-opt">
+        <input type="checkbox" id="pdf-alertes" checked>
+        <div class="modal-opt-info">
+          <div class="modal-opt-title">Alertes actives</div>
+          <div class="modal-opt-desc">Toutes les alertes en attente de traitement</div>
+        </div>
+      </label>
+      <label class="modal-opt">
+        <input type="checkbox" id="pdf-reproduction">
+        <div class="modal-opt-info">
+          <div class="modal-opt-title">Reproduction</div>
+          <div class="modal-opt-desc">Gestations en cours et vêlages prévus</div>
+        </div>
+      </label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-outline" onclick="closePdfModal()">Annuler</button>
+      <button class="btn-primary" onclick="generatePdf()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="15" height="15"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Générer le PDF
+      </button>
     </div>
   </div>
 </div>
 
 <script>
 const API = 'http://localhost:8002';
-let pendingAction = null;
-let history = [];
+let pendingAction=null, chatHistory=[], animauxData=[], alertesData=[];
+let rChart=null, aChart=null;
 
-async function loadDashboard() {
-  try {
-    const d = await fetch(`${API}/api/dashboard`).then(r=>r.json());
-    document.getElementById('s-actifs').textContent = d.total_actifs ?? '—';
-    document.getElementById('s-gestation').textContent = d.en_gestation ?? '—';
-    document.getElementById('s-alertes').textContent = d.alertes_actives ?? '—';
-    document.getElementById('s-critical').textContent = d.alertes_critiques ?? '—';
-    document.getElementById('s-ventes').textContent = d.ventes_mois ?? '—';
-    document.getElementById('s-ca').textContent = Number(d.ca_mois||0).toLocaleString('fr-SN');
-  } catch(e) {}
+document.getElementById('cur-date').textContent =
+  new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+Chart.defaults.font.family="'DM Sans',sans-serif";
+Chart.defaults.color='#6b7280';
+
+// ── NAVIGATION
+function navigate(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+  const t={dashboard:'Tableau de Bord',chat:'Chat IA',animaux:'Animaux',alertes:'Alertes',reproduction:'Reproduction',genealogie:'Généalogie'};
+  document.getElementById('topbar-title').textContent=t[page]||'BoviBot';
+  if(page==='animaux'&&!animauxData.length)loadAnimaux();
+  if(page==='alertes')loadAlertesPage();
+  if(page==='reproduction')loadGestationsPage();
 }
 
-async function loadAlertes() {
-  try {
-    const data = await fetch(`${API}/api/alertes`).then(r=>r.json());
-    const el = document.getElementById('alertes-list');
-    if (!data.length) { el.innerHTML = '<p style="color:#22c55e;font-size:0.85rem">✅ Aucune alerte active</p>'; return; }
-    el.innerHTML = data.slice(0,6).map(a => `
-      <div class="alerte-item alerte-${a.niveau}">
-        <span>${a.animal_tag ? '['+a.animal_tag+'] ' : ''}${a.message}</span>
-        <button onclick="traiterAlerte(${a.id})" title="Marquer comme traitée">✓</button>
+// ── DASHBOARD
+async function loadDashboard(){
+  try{
+    const d=await fetch(`${API}/api/dashboard`).then(r=>r.json());
+    const actifs=d.total_actifs??0, f=d.femelles??0, m=d.males??0;
+    document.getElementById('s-actifs').textContent=actifs;
+    document.getElementById('s-actifs-sub').textContent=`${f} femelles · ${m} mâles`;
+    document.getElementById('s-sante').textContent=actifs-(d.alertes_critiques??0);
+    document.getElementById('s-gestation').textContent=d.en_gestation??'—';
+    document.getElementById('s-critical').textContent=d.alertes_critiques??'—';
+    if(d.alertes_actives>0){const b=document.getElementById('nav-badge');b.textContent=d.alertes_actives;b.style.display='';}
+    buildRChart(m,f);
+    buildAChart(d.alertes_critiques??0,(d.alertes_actives??0)-(d.alertes_critiques??0));
+  }catch{
+    document.getElementById('stxt').textContent='Hors ligne';
+    document.querySelector('.sdot').style.background='var(--red)';
+  }
+}
+
+function buildRChart(m,f){
+  if(rChart)rChart.destroy();
+  rChart=new Chart(document.getElementById('repartChart'),{
+    type:'doughnut',
+    data:{labels:['Mâles','Femelles'],datasets:[{data:[m,f],backgroundColor:['#1e5231','#f5a623'],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:13},padding:14}}}}
+  });
+}
+
+function buildAChart(c,a){
+  if(aChart)aChart.destroy();
+  aChart=new Chart(document.getElementById('alertChart'),{
+    type:'bar',
+    data:{labels:['Critiques','Warning / Info'],datasets:[{data:[c,a],backgroundColor:['#dc2626','#d97706'],borderRadius:7,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{stepSize:1}},x:{grid:{display:false}}}}
+  });
+}
+
+// ── DASHBOARD PANELS
+async function loadDashAlertes(){
+  try{
+    const data=await fetch(`${API}/api/alertes`).then(r=>r.json());
+    const el=document.getElementById('dash-alertes');
+    if(!data.length){el.innerHTML='<p style="font-size:14px;color:var(--green-700);padding:8px 0">Aucune alerte active</p>';return;}
+    el.innerHTML=data.slice(0,5).map(a=>`
+      <div class="mini-alert">
+        <div class="mini-dot ${a.niveau}"></div>
+        <div class="mini-txt"><div class="mini-title">${a.numero_tag?'['+a.numero_tag+'] ':''}${a.message}</div><div class="mini-desc">${a.animal_nom||''}</div></div>
+        <span class="badge ${a.niveau}">${a.niveau}</span>
       </div>`).join('');
-  } catch(e) {}
+  }catch{document.getElementById('dash-alertes').innerHTML='<p class="empty">Erreur</p>';}
 }
 
-async function loadGestations() {
-  try {
-    const data = await fetch(`${API}/api/reproduction/en-cours`).then(r=>r.json());
-    const el = document.getElementById('gestations-list');
-    if (!data.length) { el.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem">Aucune gestation en cours</p>'; return; }
-    el.innerHTML = data.map(g => `
-      <div style="padding:0.4rem 0;border-bottom:1px solid #f0e8d8;font-size:0.85rem">
-        🐄 <strong>${g.mere_tag}</strong> × ${g.pere_tag} — Vêlage : <strong>${g.date_velage_prevue}</strong>
-        <span style="color:${g.jours_restants<14?'#dc2626':'#16a34a'};font-weight:bold"> (J-${g.jours_restants})</span>
+async function loadDashGestations(){
+  try{
+    const data=await fetch(`${API}/api/reproduction/en-cours`).then(r=>r.json());
+    const el=document.getElementById('dash-gestations');
+    if(!data.length){el.innerHTML='<p class="empty" style="padding:8px 0">Aucune gestation en cours</p>';return;}
+    el.innerHTML=data.map(g=>`
+      <div class="mini-gest">
+        <div class="mg-row">
+          <div class="mg-name">${g.mere_nom||g.mere_tag} <span style="font-size:12px;font-weight:400;color:var(--gray-400);font-family:var(--font-mono)">${g.mere_tag}</span></div>
+          <div class="mg-days" style="color:${g.jours_restants<14?'var(--red)':'var(--green-700)'}">J-${g.jours_restants}</div>
+        </div>
+        <div class="mg-sub">Vêlage : ${g.date_velage_prevue} · Père : ${g.pere_tag}</div>
       </div>`).join('');
-  } catch(e) {}
+  }catch{}
 }
 
-async function traiterAlerte(id) {
-  await fetch(`${API}/api/alertes/${id}/traiter`, {method:'POST'});
-  loadAlertes(); loadDashboard();
+// ── ALERTES PAGE
+async function loadAlertesPage(){
+  try{
+    alertesData=await fetch(`${API}/api/alertes`).then(r=>r.json());
+    document.getElementById('a-total').textContent=alertesData.length;
+    document.getElementById('a-urgent').textContent=alertesData.filter(a=>a.niveau==='critical').length;
+    document.getElementById('a-vacc').textContent=alertesData.filter(a=>a.type&&a.type.toLowerCase().includes('vacc')).length;
+    document.getElementById('a-resolues').textContent='—';
+    document.getElementById('tab-a-n').textContent=alertesData.length;
+    document.getElementById('tab-r-n').textContent='0';
+    renderAlertes();
+  }catch{document.getElementById('alertes-list').innerHTML='<p class="empty">Erreur de connexion</p>';}
 }
 
-function ask(q) { document.getElementById('user-input').value = q; sendMessage(); }
+function renderAlertes(){
+  const typeF=document.getElementById('f-type')?.value||'';
+  const niveauF=document.getElementById('f-niveau')?.value||'';
+  const filtered=alertesData.filter(a=>(!typeF||(a.type&&a.type.toLowerCase().includes(typeF)))&&(!niveauF||a.niveau===niveauF));
+  const el=document.getElementById('alertes-list');
+  if(!filtered.length){el.innerHTML='<p class="empty">Aucune alerte correspondante</p>';return;}
+  const svgMap={
+    critical:`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`,
+    warning:`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`,
+    info:`<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+  };
+  const lblMap={critical:'Urgent',warning:'Moyen',info:'Info'};
+  el.innerHTML=filtered.map(a=>{
+    const dateStr=a.date_creation?new Date(a.date_creation).toLocaleDateString('fr-FR'):'';
+    return `
+    <div class="alert-card" id="ac-${a.id}">
+      <div class="ac-ic ${a.niveau}">${svgMap[a.niveau]||svgMap.info}</div>
+      <div class="ac-body">
+        <div class="ac-title">${a.message}</div>
+        <div class="ac-desc">${a.type||''}</div>
+        <div class="ac-meta">
+          ${a.animal_nom?`<span class="tag-chip">${a.numero_tag}</span><span style="font-size:13px;font-weight:500">${a.animal_nom}</span>`:''}
+          ${dateStr?`<span class="ac-mi"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 6v6l4 2"/></svg>${dateStr}</span>`:''}
+          ${a.type?`<span class="type-chip">${a.type}</span>`:''}
+        </div>
+      </div>
+      <div class="ac-right">
+        <span class="badge ${a.niveau}">${lblMap[a.niveau]||a.niveau}</span>
+        <button class="btn-traiter" onclick="traiterAlerte(${a.id})">Traiter</button>
+        <button class="btn-more"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01"/></svg></button>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-function addMessage(role, text, sql=null, extra=null) {
-  const box = document.getElementById('chat-box');
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  let html = `<div class="bubble">${text}${sql?`<div class="sql-preview">${sql}</div>`:''}</div>`;
-  if (extra) html += extra;
-  div.innerHTML = html;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+async function traiterAlerte(id){
+  await fetch(`${API}/api/alertes/${id}/traiter`,{method:'POST'});
+  const c=document.getElementById('ac-'+id);
+  if(c){c.style.transition='opacity .35s';c.style.opacity='0';setTimeout(()=>c.remove(),350);}
+  alertesData=alertesData.filter(a=>a.id!==id);
+  loadDashboard();loadDashAlertes();
+}
+
+function switchAlertTab(tab){
+  document.getElementById('tab-a-btn').classList.toggle('active',tab==='attente');
+  document.getElementById('tab-r-btn').classList.toggle('active',tab==='resolues');
+}
+
+// ── ANIMAUX
+async function loadAnimaux(){
+  try{
+    animauxData=await fetch(`${API}/api/animaux`).then(r=>r.json());
+    renderAnimaux(animauxData);
+  }catch{document.getElementById('animaux-tbl').innerHTML='<p class="empty">Erreur de connexion</p>';}
+}
+
+function renderAnimaux(data){
+  const el=document.getElementById('animaux-tbl');
+  if(!data.length){el.innerHTML='<p class="empty">Aucun animal trouvé</p>';return;}
+  const rows=data.map(a=>`
+    <tr onclick="showGenealogy(\'${a.numero_tag}\')">
+      <td><span class="tag-chip">${a.numero_tag}</span></td>
+      <td>${a.nom||'—'}</td>
+      <td>${a.race||'—'}</td>
+      <td>${a.sexe==='F'?'♀ Femelle':'♂ Mâle'}</td>
+      <td>${a.age_mois!==undefined?a.age_mois+' mois':'—'}</td>
+      <td>${a.poids_actuel||'—'} kg</td>
+      <td>${a.gmq_kg_jour!==null&&a.gmq_kg_jour!==undefined?Number(a.gmq_kg_jour).toFixed(2)+' kg/j':'—'}</td>
+      <td><span class="badge ${a.statut==='actif'?'success':'gray'}">${a.statut}</span></td>
+    </tr>`).join('');
+  el.innerHTML=`<table><thead><tr><th>Tag</th><th>Nom</th><th>Race</th><th>Sexe</th><th>Âge</th><th>Poids</th><th>GMQ</th><th>Statut</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+let sexeFilter='';
+function filterBySexe(v){sexeFilter=v;filterTable(document.querySelector('.search-inp')?.value||'');}
+function filterTable(q){
+  let d=animauxData.filter(a=>JSON.stringify(a).toLowerCase().includes(q.toLowerCase()));
+  if(sexeFilter)d=d.filter(a=>a.sexe===sexeFilter);
+  renderAnimaux(d);
+}
+
+// ── GESTATIONS PAGE
+async function loadGestationsPage(){
+  try{
+    const data=await fetch(`${API}/api/reproduction/en-cours`).then(r=>r.json());
+    const el=document.getElementById('gest-grid');
+    if(!data.length){el.innerHTML='<p class="empty">Aucune gestation en cours</p>';return;}
+    el.innerHTML=data.map(g=>{
+      const pct=Math.max(4,Math.min(96,Math.round((280-g.jours_restants)/280*100)));
+      const urgent=g.jours_restants<14;
+      return `
+      <div class="gest-card">
+        <div class="gc-head">
+          <div><div class="gc-name">${g.mere_nom||g.mere_tag}</div><div class="gc-tag">${g.mere_tag}</div></div>
+          <span class="badge ${urgent?'critical':'success'}">${urgent?'Urgent':'En cours'}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;${urgent?'background:var(--orange)':''}"></div></div>
+        <div class="progress-lbl"><span>Progression</span><span style="${urgent?'color:var(--orange)':''}">${pct}%</span></div>
+        <div class="gc-row"><span>Père</span><span>${g.pere_tag}</span></div>
+        <div class="gc-row"><span>Vêlage prévu</span><span>${g.date_velage_prevue}</span></div>
+        <div class="gc-row"><span>Jours restants</span><span style="color:${urgent?'var(--red)':'var(--green-700)'};font-weight:700">J-${g.jours_restants}</span></div>
+      </div>`;
+    }).join('');
+  }catch{document.getElementById('gest-grid').innerHTML='<p class="empty">Erreur de connexion</p>';}
+}
+
+// ── GENEALOGIE (BONUS)
+function showGenealogy(tag){
+  // Navigate to genealogy and prefill
+  navigate('genealogie',document.querySelector('.nav-item:nth-child(7)'));
+  document.getElementById('gene-input').value=tag;
+  loadGenealogy();
+}
+
+async function loadGenealogy(){
+  const tag=document.getElementById('gene-input').value.trim();
+  if(!tag)return;
+  const el=document.getElementById('gene-tree');
+  el.innerHTML='<p class="empty">Chargement de la généalogie…</p>';
+  try{
+    const data=await fetch(`${API}/api/genealogie/${encodeURIComponent(tag)}`).then(r=>r.json());
+    renderGenealogyTree(data,el);
+  }catch{
+    // Fallback: chercher dans animauxData local
+    const animal=animauxData.find(a=>a.numero_tag.toUpperCase()===tag.toUpperCase());
+    if(animal){
+      renderGenealogyTree({sujet:animal,mere:null,pere:null,descendants:[]},el);
+    }else{
+      el.innerHTML='<p class="empty">Animal introuvable. Vérifiez le tag saisi.</p>';
+    }
+  }
+}
+
+function renderGenealogyTree(data,el){
+  const {sujet,mere,pere,descendants=[]}=data;
+  if(!sujet){el.innerHTML='<p class="empty">Données généalogiques introuvables.</p>';return;}
+
+  const nodeHtml=(a,isSubject=false)=>{
+    if(!a)return `<div class="gene-node" style="background:var(--gray-100);border-color:var(--gray-300);min-width:130px;text-align:center;padding:12px 18px;border-radius:10px;opacity:.5"><div class="gn-tag" style="font-size:11.5px;color:var(--gray-400)">inconnu</div><div class="gn-name" style="font-size:14px;font-weight:600">—</div></div>`;
+    return `<div class="gene-node${isSubject?' subject':''}">
+      <div class="gn-tag">${a.numero_tag||''}</div>
+      <div class="gn-name">${a.nom||a.numero_tag}</div>
+      <div class="gn-info">${a.sexe==='F'?'Femelle':'Mâle'}${a.race?' · '+a.race:''}</div>
+    </div>`;
+  };
+
+  let html=`<div class="gene-wrap">`;
+
+  // Parents row
+  if(mere||pere){
+    html+=`<div class="gene-lbl" style="font-size:11px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Parents</div>`;
+    html+=`<div class="gene-row" style="display:flex;gap:20px;align-items:center;justify-content:center">`;
+    if(pere)html+=nodeHtml(pere);
+    if(mere)html+=nodeHtml(mere);
+    html+=`</div>`;
+    html+=`<div style="width:2px;height:22px;background:var(--gray-300);margin:0 auto"></div>`;
+  }
+
+  // Subject
+  html+=`<div class="gene-lbl">Animal</div>`;
+  html+=`<div class="gene-row">${nodeHtml(sujet,true)}</div>`;
+
+  // Descendants
+  if(descendants.length>0){
+    html+=`<div style="width:2px;height:22px;background:var(--gray-300);margin:0 auto"></div>`;
+    html+=`<div class="gene-lbl">Descendants (${descendants.length})</div>`;
+    html+=`<div class="gene-row" style="flex-wrap:wrap;max-width:700px">`;
+    descendants.forEach(d=>{html+=nodeHtml(d);});
+    html+=`</div>`;
+  }
+
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
+// ── CHAT
+function ask(q){document.getElementById('user-input').value=q;sendMessage();}
+
+function addMessage(role,text,sql=null){
+  const box=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className='msg-row'+(role==='user'?' user':'');
+  const botAv=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>`;
+  const userAv=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>`;
+  const sqlHtml=sql?`<div class="sql-block">${sql}</div>`:'';
+  div.innerHTML=`${role==='user'?userAv:botAv}<div><div class="bubble">${text}${sqlHtml}</div><div class="msg-time">À l'instant</div></div>`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
   return div;
 }
 
-async function confirmAction(yes) {
-  if (!pendingAction) return;
+async function confirmAction(yes){
+  if(!pendingAction)return;
   document.getElementById('confirm-div')?.remove();
-  if (yes) {
-    addMessage('bot', '⏳ Exécution en cours...');
-    const r = await fetch(`${API}/api/chat`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({question:'', confirm_action:true, pending_action:pendingAction})
-    });
-    const data = await r.json();
-    document.querySelector('.msg.bot:last-child')?.remove();
-    addMessage('bot', data.answer || 'Action effectuée !');
-    pendingAction = null;
-    loadDashboard(); loadAlertes();
-  } else {
-    addMessage('bot', '❌ Action annulée.');
-    pendingAction = null;
+  if(yes){
+    addMessage('bot','Exécution en cours…');
+    try{
+      const r=await fetch(`${API}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:'',confirm_action:true,pending_action:pendingAction})});
+      const data=await r.json();
+      document.querySelector('.msg-row:last-child')?.remove();
+      addMessage('bot',data.answer||'Action effectuée avec succès.');
+    }catch{addMessage('bot','Erreur lors de l\'exécution.');}
+    pendingAction=null;loadDashboard();loadDashAlertes();
+  }else{
+    addMessage('bot','Action annulée.');pendingAction=null;
   }
 }
 
-async function sendMessage() {
-  const input = document.getElementById('user-input');
-  const question = input.value.trim();
-  if (!question) return;
-  input.value = '';
-  addMessage('user', question);
-  history.push({role:'user', content:question});
-  const loading = addMessage('bot', '⏳ Analyse en cours...');
-
-  try {
-    const r = await fetch(`${API}/api/chat`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({question, history: history.slice(-6)})
-    });
-    const data = await r.json();
-    loading.remove();
-
-    if (data.type === 'action_pending') {
-      pendingAction = data.pending_action;
-      const confirmDiv = document.createElement('div');
-      confirmDiv.id = 'confirm-div';
-      confirmDiv.className = 'msg confirm';
-      confirmDiv.innerHTML = `<div class="bubble">⚠️ ${data.confirmation}<div class="confirm-btns"><button class="btn-oui" onclick="confirmAction(true)">✅ Confirmer</button><button class="btn-non" onclick="confirmAction(false)">❌ Annuler</button></div></div>`;
-      document.getElementById('chat-box').appendChild(confirmDiv);
-    } else {
-      addMessage('bot', data.answer + (data.count !== undefined ? ` (${data.count} résultat${data.count>1?'s':''})` : ''), data.sql);
-      history.push({role:'assistant', content: data.answer});
+async function sendMessage(){
+  const input=document.getElementById('user-input');
+  const question=input.value.trim();
+  if(!question)return;
+  input.value='';
+  addMessage('user',question);
+  chatHistory.push({role:'user',content:question});
+  const box=document.getElementById('chat-messages');
+  const ld=document.createElement('div');
+  ld.className='msg-row';ld.id='ld-msg';
+  ld.innerHTML=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div><div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  box.appendChild(ld);box.scrollTop=box.scrollHeight;
+  try{
+    const r=await fetch(`${API}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,history:chatHistory.slice(-6)})});
+    const data=await r.json();
+    document.getElementById('ld-msg')?.remove();
+    if(data.type==='action_pending'){
+      pendingAction=data.pending_action;
+      const cDiv=document.createElement('div');
+      cDiv.id='confirm-div';cDiv.className='msg-row';
+      cDiv.innerHTML=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+        <div><div class="bubble">${data.answer||''}</div>
+        <div class="confirm-card"><p>${data.confirmation||'Confirmer cette action ?'}</p>
+        <div class="confirm-btns"><button class="btn-yes" onclick="confirmAction(true)">Confirmer</button><button class="btn-no" onclick="confirmAction(false)">Annuler</button></div></div>
+        <div class="msg-time">À l'instant</div></div>`;
+      box.appendChild(cDiv);
+    }else{
+      const ct=data.count!==undefined?` <span style="font-size:12.5px;color:var(--gray-400)">(${data.count} résultat${data.count>1?'s':''})</span>`:'';
+      addMessage('bot',(data.answer||'')+ct,data.sql);
+      chatHistory.push({role:'assistant',content:data.answer});
     }
-
-    if (data.data && data.data.length > 0) {
-      document.getElementById('results-section').style.display = 'block';
-      const keys = Object.keys(data.data[0]);
-      const rows = data.data.map(row=>`<tr>${keys.map(k=>`<td>${row[k]??''}</td>`).join('')}</tr>`).join('');
-      document.getElementById('results-table').innerHTML = `<table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+    if(data.data&&data.data.length>0){
+      const keys=Object.keys(data.data[0]);
+      const rows=data.data.map(row=>`<tr>${keys.map(k=>`<td>${row[k]??''}</td>`).join('')}</tr>`).join('');
+      const tDiv=document.createElement('div');
+      tDiv.className='results-tbl';
+      tDiv.innerHTML=`<table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+      box.appendChild(tDiv);
     }
-    document.getElementById('chat-box').scrollTop = 9999;
-  } catch(e) {
-    loading.remove();
-    addMessage('bot', '❌ Erreur de connexion au serveur.');
+    box.scrollTop=box.scrollHeight;
+  }catch{
+    document.getElementById('ld-msg')?.remove();
+    addMessage('bot','Erreur de connexion. Vérifiez que le serveur est démarré sur le port 8002.');
   }
 }
 
-loadDashboard(); loadAlertes(); loadGestations();
+// ── PDF EXPORT (BONUS)
+function openPdfModal(){document.getElementById('pdf-modal').style.display='flex';}
+function closePdfModal(){document.getElementById('pdf-modal').style.display='none';}
+
+async function generatePdf(){
+  closePdfModal();
+  const inclDash=document.getElementById('pdf-dashboard').checked;
+  const inclAnimaux=document.getElementById('pdf-animaux').checked;
+  const inclAlertes=document.getElementById('pdf-alertes').checked;
+  const inclRepro=document.getElementById('pdf-reproduction').checked;
+
+  // Collect data
+  let sections=[];
+  const dateStr=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+
+  if(inclDash){
+    const total=document.getElementById('s-actifs').textContent;
+    const sante=document.getElementById('s-sante').textContent;
+    const gest=document.getElementById('s-gestation').textContent;
+    const crit=document.getElementById('s-critical').textContent;
+    sections.push(`<h2 style="color:#1e5231;border-bottom:2px solid #1e5231;padding-bottom:6px">Tableau de Bord</h2>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0">
+        <tr><td style="padding:8px;border:1px solid #e5e7eb">Total animaux</td><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold">${total}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e5e7eb">En santé</td><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold">${sante}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e5e7eb">En gestation</td><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold">${gest}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e5e7eb">Alertes critiques</td><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;color:#dc2626">${crit}</td></tr>
+      </table>`);
+  }
+
+  if(inclAnimaux&&animauxData.length>0){
+    const rows=animauxData.slice(0,50).map(a=>`<tr>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.numero_tag}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.nom||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.race||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.sexe==='F'?'Femelle':'Mâle'}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.age_mois||'—'} mois</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.poids_actuel||'—'} kg</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.gmq_kg_jour?Number(a.gmq_kg_jour).toFixed(2)+' kg/j':'—'}</td>
+    </tr>`).join('');
+    sections.push(`<h2 style="color:#1e5231;border-bottom:2px solid #1e5231;padding-bottom:6px;margin-top:28px">Liste des Animaux</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin:12px 0">
+        <thead><tr style="background:#1e5231;color:white">
+          <th style="padding:8px 10px;text-align:left">Tag</th><th style="padding:8px 10px;text-align:left">Nom</th><th style="padding:8px 10px;text-align:left">Race</th><th style="padding:8px 10px;text-align:left">Sexe</th><th style="padding:8px 10px;text-align:left">Âge</th><th style="padding:8px 10px;text-align:left">Poids</th><th style="padding:8px 10px;text-align:left">GMQ</th>
+        </tr></thead><tbody>${rows}</tbody>
+      </table>`);
+  }
+
+  if(inclAlertes&&alertesData.length>0){
+    const rows=alertesData.map(a=>`<tr>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.numero_tag||'—'}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.message}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb;color:${a.niveau==='critical'?'#dc2626':a.niveau==='warning'?'#d97706':'#2563eb'};font-weight:bold">${a.niveau}</td>
+      <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.type||'—'}</td>
+    </tr>`).join('');
+    sections.push(`<h2 style="color:#1e5231;border-bottom:2px solid #1e5231;padding-bottom:6px;margin-top:28px">Alertes Actives</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin:12px 0">
+        <thead><tr style="background:#1e5231;color:white">
+          <th style="padding:8px 10px;text-align:left">Tag</th><th style="padding:8px 10px;text-align:left">Message</th><th style="padding:8px 10px;text-align:left">Niveau</th><th style="padding:8px 10px;text-align:left">Type</th>
+        </tr></thead><tbody>${rows}</tbody>
+      </table>`);
+  }
+
+  // Build printable window
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BoviBot – Rapport du ${dateStr}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:40px;color:#111;max-width:900px;margin:0 auto}
+      h1{color:#1e5231;font-size:24px;margin-bottom:4px}
+      .sub{color:#6b7280;font-size:14px;margin-bottom:32px}
+      @media print{body{padding:20px}}
+    </style>
+  </head><body>
+    <h1>BoviBot — Rapport d'élevage</h1>
+    <div class="sub">Généré le ${dateStr} · Amadou Diallo</div>
+    ${sections.join('')}
+    <div style="margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af">BoviBot — Application de gestion bovine IA · ESP/UCAD Licence 3</div>
+    <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function exportGenealogiePdf(){
+  const el=document.getElementById('gene-tree');
+  const tag=document.getElementById('gene-input').value||'Animal';
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Généalogie – ${tag}</title>
+    <style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#111}h1{color:#1e5231}
+    .gene-node{display:inline-block;background:#e8f5ee;border:2px solid #e8f5ee;border-radius:10px;padding:10px 16px;margin:4px;vertical-align:top}
+    .gene-node.subject{background:#c8e6d0;border-color:#1e5231}
+    .gn-tag{font-size:11px;color:#1e5231;margin-bottom:2px}
+    .gn-name{font-size:14px;font-weight:bold}
+    .gn-info{font-size:12px;color:#6b7280}
+    </style>
+  </head><body>
+    <h1>Arbre Généalogique — ${tag}</h1>
+    <p style="color:#6b7280;font-size:13px">Généré le ${new Date().toLocaleDateString('fr-FR')}</p>
+    ${el.innerHTML}
+    <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ── DARK MODE
+let darkMode=localStorage.getItem('bovibot-dark')==='1';
+function applyDark(){
+  document.body.classList.toggle('dark',darkMode);
+  document.getElementById('toggle-track').classList.toggle('on',darkMode);
+  const icon=document.getElementById('theme-icon');
+  const lbl=document.getElementById('theme-label');
+  if(darkMode){
+    icon.innerHTML='<circle cx="12" cy="12" r="5"/><path stroke-linecap="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+    lbl.textContent='Mode clair';
+  }else{
+    icon.innerHTML='<path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+    lbl.textContent='Mode sombre';
+  }
+  Chart.defaults.color=darkMode?'#8aa4bf':'#6b7280';
+  if(rChart||aChart){buildRChart(0,0);buildAChart(0,0);loadDashboard();}
+}
+function toggleDark(){darkMode=!darkMode;localStorage.setItem('bovibot-dark',darkMode?'1':'0');applyDark();}
+applyDark();
+
+// ── INIT
+loadDashboard();
+loadDashAlertes();
+loadDashGestations();
 </script>
 </body>
 </html>

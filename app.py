@@ -10,6 +10,8 @@ from pydantic import BaseModel
 import mysql.connector
 import os, re, json, httpx
 from dotenv import load_dotenv
+import os, re, json, httpx, asyncio
+
 load_dotenv()
 
 app = FastAPI(title="BoviBot API", version="1.0.0")
@@ -24,8 +26,8 @@ DB_CONFIG = {
     "charset":    "utf8mb4",      
     "use_unicode": True,          
 }
-LLM_API_KEY  = os.getenv("OPENAI_API_KEY", "ollama")
-LLM_MODEL    = os.getenv("LLM_MODEL", "mistral")
+LLM_API_KEY  = os.getenv("LLM_API_KEY", "ollama")
+LLM_MODEL    = os.getenv("LLM_MODEL", "qwen2.5:7b")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:11434/v1")
 # ── Schéma BDD pour le prompt ───────────────────────────────────
 DB_SCHEMA = """
@@ -108,21 +110,49 @@ def call_procedure(name: str, params: dict):
 # ── Appel LLM ──────────────────────────────────────────────────
 async def ask_llm(question: str, history: list = []) -> dict:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    messages += history[-6:]  # contexte des 3 derniers échanges
+    
+    # Filtrer les messages invalides de l'historique
+    history_clean = [
+        m for m in history[-6:]
+        if isinstance(m, dict) and m.get("content") and m.get("role")
+    ]
+    messages += history_clean
     messages.append({"role": "user", "content": question})
-    async with httpx.AsyncClient() as client:
+
+    async with httpx.AsyncClient(timeout=120) as client:
         r = await client.post(
             f"{LLM_BASE_URL}/chat/completions",
-            headers={"Authorization": f"Bearer {LLM_API_KEY}"},
-json={"model": LLM_MODEL, "messages": messages, "temperature": 0, "format": "json"},            timeout=300,
+            headers={"Authorization": f"Bearer {LLM_API_KEY}", "Content-Type": "application/json"},
+            json={"model": LLM_MODEL, "messages": messages, "temperature": 0, "max_tokens": 1000},
         )
+        if r.status_code != 200:
+            print("ERREUR LLM:", r.status_code, r.text)
         r.raise_for_status()
-        content = r.json()["choices"][0]["message"]["content"]
-        match = re.search(r'\{.*\}', content, re.DOTALL)
-        if match:
-            return json.loads(match.group())
-        raise ValueError("Réponse LLM invalide")
 
+        content = r.json()["choices"][0]["message"]["content"]
+        content = re.sub(r"```json|```", "", content).strip()
+
+        # Enlever tout texte avant le premier {
+        if '{' in content:
+            content = content[content.find('{'):]
+
+        # Essayer un parse direct d'abord
+        try:
+            return json.loads(content)
+        except:
+            pass
+
+        # Prendre le premier objet JSON valide trouvé
+        decoder = json.JSONDecoder()
+        for i, char in enumerate(content):
+            if char == '{':
+                try:
+                    obj, _ = decoder.raw_decode(content, i)
+                    return obj
+                except:
+                    continue
+
+        raise ValueError(f"Réponse LLM invalide: {content[:200]}")
 # ── Routes API ──────────────────────────────────────────────────
 class ChatMessage(BaseModel):
     question: str
@@ -228,6 +258,41 @@ def get_gestations():
 @app.get("/health")
 def health():
     return {"status": "ok", "app": "BoviBot"}
+@app.get("/api/genealogie/{tag}")
+def get_genealogie(tag: str):
+    # Trouver l'animal sujet
+    sujet = execute_query(f"""
+        SELECT a.*, r.nom as race 
+        FROM animaux a 
+        LEFT JOIN races r ON a.race_id = r.id 
+        WHERE a.numero_tag = '{tag}'
+    """)
+    if not sujet:
+        raise HTTPException(status_code=404, detail="Animal introuvable")
+    
+    animal = sujet[0]
+    
+    # Trouver la mère
+    mere = None
+    if animal.get("mere_id"):
+        m = execute_query(f"SELECT a.*, r.nom as race FROM animaux a LEFT JOIN races r ON a.race_id=r.id WHERE a.id={animal['mere_id']}")
+        if m: mere = m[0]
+    
+    # Trouver le père
+    pere = None
+    if animal.get("pere_id"):
+        p = execute_query(f"SELECT a.*, r.nom as race FROM animaux a LEFT JOIN races r ON a.race_id=r.id WHERE a.id={animal['pere_id']}")
+        if p: pere = p[0]
+    
+    # Trouver les descendants
+    descendants = execute_query(f"""
+        SELECT a.*, r.nom as race FROM animaux a 
+        LEFT JOIN races r ON a.race_id=r.id 
+        WHERE a.mere_id={animal['id']} OR a.pere_id={animal['id']}
+    """)
+    
+    return {"sujet": animal, "mere": mere, "pere": pere, "descendants": descendants}
+
 
 if __name__ == "__main__":
     import uvicorn
