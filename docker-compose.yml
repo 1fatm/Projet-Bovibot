@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+
+  # ── Base de données MySQL ──────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: bovibot_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql       # persistance des données
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # script SQL initial (si tu en as un)
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Application FastAPI ────────────────────────────────────────
+  api:
+    build: .
+    container_name: bovibot_api
+    restart: always
+    ports:
+      - "8002:8002"
+    environment:
+      DB_HOST: db                        # nom du service MySQL ci-dessus
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_MODEL: ${LLM_MODEL}
+      LLM_BASE_URL: ${LLM_BASE_URL}     # ex: https://api.groq.com/openai/v1
+    depends_on:
+      db:
+        condition: service_healthy       # attend que MySQL soit prêt
+
+volumes:
+  mysql_data:

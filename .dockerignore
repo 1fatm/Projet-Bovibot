@@ -1,0 +1,26 @@
+# Environnement Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+env/
+venv/
+
+# Variables sensibles (ne JAMAIS inclure dans l'image)
+.env
+
+# Git
+.git/
+.gitignore
+
+# Docs et fichiers inutiles
+README.md
+*.md
+
+# Fichiers OS
+.DS_Store
+Thumbs.db
+
+
+
+
