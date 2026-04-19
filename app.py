@@ -24,7 +24,8 @@ DB_CONFIG = {
     "password":   os.getenv("DB_PASSWORD", ""),
     "database":   os.getenv("DB_NAME", "bovibot"),
     "charset":    "utf8mb4",      
-    "use_unicode": True,          
+    "use_unicode": True,
+    "ssl_disabled": False          
 }
 LLM_API_KEY  = os.getenv("LLM_API_KEY", "ollama")
 LLM_MODEL    = os.getenv("LLM_MODEL", "qwen2.5:7b")
@@ -50,7 +51,6 @@ Procédures disponibles :
 - sp_enregistrer_pesee(animal_id, poids_kg, date, agent)
 - sp_declarer_vente(animal_id, acheteur, telephone, prix_fcfa, poids_vente_kg, date_vente)
 """
-
 SYSTEM_PROMPT = f"""Tu es BoviBot, l'assistant IA d'un élevage bovin.
 Tu aides l'éleveur à gérer son troupeau en langage naturel.
 
@@ -60,19 +60,22 @@ Tu peux répondre à deux types de demandes :
 1. CONSULTATION : Requête SQL SELECT pour afficher des données
 2. ACTION : Appel de procédure stockée (pesée, vente)
 
-Réponds TOUJOURS en JSON :
+Réponds TOUJOURS en JSON VALIDE et COMPLET :
 Consultation : {{"type":"query","sql":"SELECT ...","explication":"..."}}
 Action pesée : {{"type":"action","action":"sp_enregistrer_pesee","params":{{"animal_id":1,"poids_kg":320.5,"date":"2026-03-27","agent":"Nom"}},"explication":"...","confirmation":"Résumé pour confirmation"}}
 Action vente : {{"type":"action","action":"sp_declarer_vente","params":{{"animal_id":1,"acheteur":"Nom","telephone":"+221...","prix_fcfa":450000,"poids_vente_kg":310.0,"date_vente":"2026-03-27"}},"explication":"...","confirmation":"Résumé pour confirmation"}}
 Info directe  : {{"type":"info","sql":null,"explication":"..."}}
 
-RÈGLES :
+RÈGLES STRICTES :
+- Réponds UNIQUEMENT avec du JSON valide, sans texte avant ou après
+- animal_id doit TOUJOURS être un entier (ex: 1, 2, 3) JAMAIS une sous-requête SQL
+- Si tu ne connais pas l'animal_id, utilise animal_id: 0 et explique dans "explication"
 - Requêtes SELECT uniquement pour les consultations (LIMIT 100)
 - Les actions nécessitent une confirmation explicite de l'utilisateur
-- Toujours utiliser les fonctions fn_age_en_mois() et fn_gmq() dans les requêtes pertinentes
+- Toujours utiliser fn_age_en_mois() et fn_gmq() dans les requêtes pertinentes
 - Dates au format YYYY-MM-DD
+- Le JSON doit être complet et fermé correctement
 """
-
 # ── Connexion MySQL ─────────────────────────────────────────────
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
@@ -123,7 +126,7 @@ async def ask_llm(question: str, history: list = []) -> dict:
         r = await client.post(
             f"{LLM_BASE_URL}/chat/completions",
             headers={"Authorization": f"Bearer {LLM_API_KEY}", "Content-Type": "application/json"},
-            json={"model": LLM_MODEL, "messages": messages, "temperature": 0, "max_tokens": 1000},
+            json={"model": LLM_MODEL, "messages": messages, "temperature": 0, "max_tokens": 4000},
         )
         if r.status_code != 200:
             print("ERREUR LLM:", r.status_code, r.text)
@@ -296,4 +299,4 @@ def get_genealogie(tag: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8002, reload=False)
