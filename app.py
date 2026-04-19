@@ -3,20 +3,23 @@ BoviBot — Squelette Backend FastAPI
 Gestion d'élevage bovin avec LLM + PL/SQL
 Projet L3 — ESP/UCAD
 """
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import mysql.connector
-import os, re, json, httpx
-from dotenv import load_dotenv
 import os, re, json, httpx, asyncio
+from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI(title="BoviBot API", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+@app.get("/")
+def root():
+    return FileResponse("index.html")
 # ── Configuration ───────────────────────────────────────────────
 DB_CONFIG = {
     "host":       os.getenv("DB_HOST", "localhost"),
