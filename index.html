@@ -1011,7 +1011,11 @@ async function confirmAction(yes){
       const r=await fetch(`${API}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:'',confirm_action:true,pending_action:pendingAction})});
       const data=await r.json();
       document.querySelector('.msg-row:last-child')?.remove();
-      addMessage('bot',data.answer||'Action effectuée avec succès.');
+      if(r.ok){
+  addMessage('bot','✅ '+(data.answer||'Action effectuée avec succès.'));
+}else{
+  addMessage('bot','❌ Erreur : '+(data.detail||'Action impossible.'));
+}
     }catch{addMessage('bot','Erreur lors de l\'exécution.');}
     pendingAction=null;loadDashboard();loadDashAlertes();
   }else{

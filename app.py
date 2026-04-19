@@ -1,11 +1,10 @@
 """
-BoviBot — Squelette Backend FastAPI
+BoviBot — Backend FastAPI
 Gestion d'élevage bovin avec LLM + PL/SQL
 Projet L3 — ESP/UCAD
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import mysql.connector
@@ -20,19 +19,20 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 @app.get("/")
 def root():
     return FileResponse("index.html")
+
 # ── Configuration ───────────────────────────────────────────────
 DB_CONFIG = {
     "host":       os.getenv("DB_HOST", "localhost"),
     "user":       os.getenv("DB_USER", "root"),
     "password":   os.getenv("DB_PASSWORD", ""),
     "database":   os.getenv("DB_NAME", "bovibot"),
-    "charset":    "utf8mb4",      
+    "charset":    "utf8mb4",
     "use_unicode": True,
-    "ssl_disabled": False          
 }
-LLM_API_KEY  = os.getenv("LLM_API_KEY", "ollama")
-LLM_MODEL    = os.getenv("LLM_MODEL", "qwen2.5:7b")
-LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:11434/v1")
+LLM_API_KEY  = os.getenv("LLM_API_KEY", "")
+LLM_MODEL    = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1")
+
 # ── Schéma BDD pour le prompt ───────────────────────────────────
 DB_SCHEMA = """
 Tables MySQL disponibles :
@@ -54,6 +54,7 @@ Procédures disponibles :
 - sp_enregistrer_pesee(animal_id, poids_kg, date, agent)
 - sp_declarer_vente(animal_id, acheteur, telephone, prix_fcfa, poids_vente_kg, date_vente)
 """
+
 SYSTEM_PROMPT = f"""Tu es BoviBot, l'assistant IA d'un élevage bovin.
 Tu aides l'éleveur à gérer son troupeau en langage naturel.
 
@@ -72,13 +73,14 @@ Info directe  : {{"type":"info","sql":null,"explication":"..."}}
 RÈGLES STRICTES :
 - Réponds UNIQUEMENT avec du JSON valide, sans texte avant ou après
 - animal_id doit TOUJOURS être un entier (ex: 1, 2, 3) JAMAIS une sous-requête SQL
-- Si tu ne connais pas l'animal_id, utilise animal_id: 0 et explique dans "explication"
+- Si la question contient [INFO: TAG-XXX a animal_id=N], utilise N comme animal_id
 - Requêtes SELECT uniquement pour les consultations (LIMIT 100)
 - Les actions nécessitent une confirmation explicite de l'utilisateur
 - Toujours utiliser fn_age_en_mois() et fn_gmq() dans les requêtes pertinentes
 - Dates au format YYYY-MM-DD
 - Le JSON doit être complet et fermé correctement
 """
+
 # ── Connexion MySQL ─────────────────────────────────────────────
 def get_db():
     return mysql.connector.connect(**DB_CONFIG)
@@ -93,7 +95,7 @@ def execute_query(sql: str):
         cursor.close(); conn.close()
 
 def call_procedure(name: str, params: dict):
-    """Appelle une procédure stockée PL/SQL"""
+    """Appelle une procédure stockée PL/SQL — remonte les erreurs MySQL"""
     conn = get_db()
     cursor = conn.cursor()
     try:
@@ -110,14 +112,16 @@ def call_procedure(name: str, params: dict):
             ])
         conn.commit()
         return {"success": True}
+    except mysql.connector.Error as e:
+        # ← CORRECTION : remonte l'erreur de la procédure stockée
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=e.msg)
     finally:
         cursor.close(); conn.close()
 
 # ── Appel LLM ──────────────────────────────────────────────────
 async def ask_llm(question: str, history: list = []) -> dict:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    
-    # Filtrer les messages invalides de l'historique
     history_clean = [
         m for m in history[-6:]
         if isinstance(m, dict) and m.get("content") and m.get("role")
@@ -129,7 +133,7 @@ async def ask_llm(question: str, history: list = []) -> dict:
         r = await client.post(
             f"{LLM_BASE_URL}/chat/completions",
             headers={"Authorization": f"Bearer {LLM_API_KEY}", "Content-Type": "application/json"},
-            json={"model": LLM_MODEL, "messages": messages, "temperature": 0, "max_tokens": 4000},
+            json={"model": LLM_MODEL, "messages": messages, "temperature": 0},
         )
         if r.status_code != 200:
             print("ERREUR LLM:", r.status_code, r.text)
@@ -138,17 +142,14 @@ async def ask_llm(question: str, history: list = []) -> dict:
         content = r.json()["choices"][0]["message"]["content"]
         content = re.sub(r"```json|```", "", content).strip()
 
-        # Enlever tout texte avant le premier {
         if '{' in content:
             content = content[content.find('{'):]
 
-        # Essayer un parse direct d'abord
         try:
             return json.loads(content)
         except:
             pass
 
-        # Prendre le premier objet JSON valide trouvé
         decoder = json.JSONDecoder()
         for i, char in enumerate(content):
             if char == '{':
@@ -159,20 +160,34 @@ async def ask_llm(question: str, history: list = []) -> dict:
                     continue
 
         raise ValueError(f"Réponse LLM invalide: {content[:200]}")
+
 # ── Routes API ──────────────────────────────────────────────────
 class ChatMessage(BaseModel):
     question: str
     history: list = []
     confirm_action: bool = False
     pending_action: dict = {}
+
 @app.post("/api/chat")
 async def chat(msg: ChatMessage):
     try:
         if msg.confirm_action and msg.pending_action:
+            # ← CORRECTION : l'erreur MySQL remonte proprement
             result = call_procedure(msg.pending_action["action"], msg.pending_action["params"])
             return {"type": "action_done", "answer": "Action effectuée avec succès !", "data": []}
 
-        llm = await ask_llm(msg.question, msg.history)
+        # ← CORRECTION : enrichir la question avec animal_id automatiquement
+        question_enrichie = msg.question
+        tags = re.findall(r'TAG-\d+', msg.question.upper())
+        for tag in tags:
+            try:
+                result = execute_query(f"SELECT id, statut FROM animaux WHERE numero_tag='{tag}'")
+                if result:
+                    question_enrichie += f" [INFO: {tag} a animal_id={result[0]['id']}, statut={result[0]['statut']}]"
+            except:
+                pass
+
+        llm = await ask_llm(question_enrichie, msg.history)
         t = llm.get("type", "info")
 
         if t == "query":
@@ -194,9 +209,11 @@ async def chat(msg: ChatMessage):
         else:
             return {"type":"info","answer":llm.get("explication",""),"data":[]}
 
+    except HTTPException:
+        raise  # ← laisser passer les erreurs HTTP (ex: erreur procédure)
     except Exception as e:
         import traceback
-        traceback.print_exc()   # ← affiche l'erreur complète dans le terminal
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/dashboard")
@@ -261,12 +278,8 @@ def get_gestations():
         ORDER BY r.date_velage_prevue ASC
     """)
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "app": "BoviBot"}
 @app.get("/api/genealogie/{tag}")
 def get_genealogie(tag: str):
-    # Trouver l'animal sujet
     sujet = execute_query(f"""
         SELECT a.*, r.nom as race 
         FROM animaux a 
@@ -275,30 +288,25 @@ def get_genealogie(tag: str):
     """)
     if not sujet:
         raise HTTPException(status_code=404, detail="Animal introuvable")
-    
     animal = sujet[0]
-    
-    # Trouver la mère
     mere = None
     if animal.get("mere_id"):
         m = execute_query(f"SELECT a.*, r.nom as race FROM animaux a LEFT JOIN races r ON a.race_id=r.id WHERE a.id={animal['mere_id']}")
         if m: mere = m[0]
-    
-    # Trouver le père
     pere = None
     if animal.get("pere_id"):
         p = execute_query(f"SELECT a.*, r.nom as race FROM animaux a LEFT JOIN races r ON a.race_id=r.id WHERE a.id={animal['pere_id']}")
         if p: pere = p[0]
-    
-    # Trouver les descendants
     descendants = execute_query(f"""
         SELECT a.*, r.nom as race FROM animaux a 
         LEFT JOIN races r ON a.race_id=r.id 
         WHERE a.mere_id={animal['id']} OR a.pere_id={animal['id']}
     """)
-    
     return {"sujet": animal, "mere": mere, "pere": pere, "descendants": descendants}
 
+@app.get("/health")
+def health():
+    return {"status": "ok", "app": "BoviBot"}
 
 if __name__ == "__main__":
     import uvicorn
