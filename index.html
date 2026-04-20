@@ -197,6 +197,8 @@ body.dark tbody tr:hover{background:var(--gray-100)}
 .chip:hover{border-color:var(--green-600);color:var(--green-700);background:var(--green-50)}
 .chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
 .msg-row{display:flex;gap:10px;max-width:88%}
+.msg-row.has-table{max-width:100%;flex-direction:column;gap:6px}
+.msg-row.has-table .msg-av-row{display:flex;gap:10px;align-items:flex-start}
 .msg-row.user{align-self:flex-end;flex-direction:row-reverse}
 .msg-av{width:34px;height:34px;border-radius:50%;background:var(--green-100);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .msg-av svg{width:17px;height:17px;color:var(--green-700)}
@@ -212,12 +214,16 @@ body.dark tbody tr:hover{background:var(--gray-100)}
 .btn-yes{background:var(--green-700);color:#fff;border:none;padding:7px 16px;border-radius:7px;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .14s}
 .btn-yes:hover{background:var(--green-600)}
 .btn-no{background:var(--white);color:var(--gray-600);border:1px solid var(--gray-300);padding:7px 16px;border-radius:7px;font-size:13.5px;font-weight:500;cursor:pointer}
-.results-tbl{margin-top:10px;overflow-x:auto;border-radius:8px;border:1px solid var(--gray-200)}
+
+/* ====== CORRECTION : tableau résultats dans la bulle ====== */
+.results-tbl{margin-top:4px;border-radius:10px;border:1px solid var(--gray-200);overflow:hidden;width:100%}
 .results-tbl table{width:100%;border-collapse:collapse;font-size:13px}
 .results-tbl th{background:var(--green-700);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.4px;text-transform:uppercase}
-.results-tbl td{padding:9px 12px;border-bottom:1px solid var(--gray-100)}
+.results-tbl td{padding:9px 12px;border-bottom:1px solid var(--gray-200);color:var(--gray-800)}
 .results-tbl tr:last-child td{border-bottom:none}
-.results-tbl tbody tr:hover td{background:var(--gray-50)}
+.results-tbl tbody tr:hover td{background:rgba(0,0,0,.03)}
+/* ========================================================= */
+
 .chat-bar{padding:13px 15px;border-top:1px solid var(--gray-200);display:flex;gap:8px;align-items:center}
 .chat-inp{flex:1;border:1px solid var(--gray-200);border-radius:9px;padding:11px 15px;font-size:14px;outline:none;background:var(--gray-50);color:var(--gray-900);transition:border-color .14s}
 .chat-inp:focus{border-color:var(--green-600);background:var(--white)}
@@ -352,18 +358,13 @@ tbody td{padding:13px 15px;font-size:14px;color:var(--gray-700)}
 <aside class="sidebar">
   <div class="sb-logo">
     <div class="sb-icon">
-      <!-- Traces de sabots de vache (2 ongles réalistes) -->
       <svg width="26" height="26" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Empreinte avant-gauche -->
         <ellipse cx="18" cy="16" rx="7" ry="10" rx="6.5" ry="9.5" fill="#1a4228" transform="rotate(-10 18 16)"/>
         <ellipse cx="29" cy="14" rx="6" ry="9" fill="#1a4228" transform="rotate(10 29 14)"/>
-        <!-- Empreinte arrière-droite -->
         <ellipse cx="51" cy="40" rx="6.5" ry="9.5" fill="#1a4228" transform="rotate(-10 51 40)"/>
         <ellipse cx="62" cy="38" rx="6" ry="9" fill="#1a4228" transform="rotate(10 62 38)"/>
-        <!-- Empreinte avant-droite (outline) -->
         <ellipse cx="52" cy="10" rx="6.5" ry="9.5" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(-10 52 10)"/>
         <ellipse cx="63" cy="8" rx="6" ry="9" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(10 63 8)"/>
-        <!-- Empreinte arrière-gauche (outline) -->
         <ellipse cx="17" cy="42" rx="6.5" ry="9.5" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(-10 17 42)"/>
         <ellipse cx="28" cy="40" rx="6" ry="9" fill="none" stroke="#1a4228" stroke-width="2.2" transform="rotate(10 28 40)"/>
       </svg>
@@ -397,7 +398,7 @@ tbody td{padding:13px 15px;font-size:14px;color:var(--gray-700)}
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
       Reproduction
     </div>
-    <div class="nav-item" onclick="navigate('genealogie',this)">
+    <div class="nav-item" id="nav-genealogie" onclick="navigate('genealogie',this)">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
       Généalogie
     </div>
@@ -630,12 +631,11 @@ tbody td{padding:13px 15px;font-size:14px;color:var(--gray-700)}
     <div class="page" id="page-reproduction">
       <div class="ph">
         <div><div class="ph-title">Gestion de la Reproduction</div><div class="ph-sub">Gestations en cours et vêlages à venir</div></div>
-        <!-- Pas de bouton "Nouvel enregistrement" — géré via le Chat IA -->
       </div>
       <div class="gest-grid" id="gest-grid"><p class="empty">Chargement des gestations…</p></div>
     </div>
 
-    <!-- ══ GENEALOGIE (BONUS) ══ -->
+    <!-- ══ GENEALOGIE ══ -->
     <div class="page" id="page-genealogie">
       <div class="ph">
         <div><div class="ph-title">Arbre Généalogique</div><div class="ph-sub">Visualisez les liens de parenté entre animaux</div></div>
@@ -644,12 +644,10 @@ tbody td{padding:13px 15px;font-size:14px;color:var(--gray-700)}
           Exporter PDF
         </button>
       </div>
-
       <div class="gene-search">
         <input type="text" id="gene-input" placeholder="Entrez le tag de l'animal (ex : TAG-001)…" onkeypress="if(event.key==='Enter')loadGenealogy()">
         <button onclick="loadGenealogy()">Rechercher</button>
       </div>
-
       <div class="gene-tree" id="gene-tree">
         <p class="empty" style="margin-top:40px">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="40" height="40" style="color:var(--gray-300);display:block;margin:0 auto 12px"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
@@ -667,34 +665,10 @@ tbody td{padding:13px 15px;font-size:14px;color:var(--gray-700)}
     <div class="modal-title">Exporter en PDF</div>
     <div class="modal-sub">Choisissez les données à inclure dans le rapport</div>
     <div class="modal-options">
-      <label class="modal-opt">
-        <input type="checkbox" id="pdf-dashboard" checked>
-        <div class="modal-opt-info">
-          <div class="modal-opt-title">Tableau de bord</div>
-          <div class="modal-opt-desc">KPIs, statistiques globales du troupeau</div>
-        </div>
-      </label>
-      <label class="modal-opt">
-        <input type="checkbox" id="pdf-animaux" checked>
-        <div class="modal-opt-info">
-          <div class="modal-opt-title">Liste des animaux</div>
-          <div class="modal-opt-desc">Tag, race, âge, poids, GMQ, statut</div>
-        </div>
-      </label>
-      <label class="modal-opt">
-        <input type="checkbox" id="pdf-alertes" checked>
-        <div class="modal-opt-info">
-          <div class="modal-opt-title">Alertes actives</div>
-          <div class="modal-opt-desc">Toutes les alertes en attente de traitement</div>
-        </div>
-      </label>
-      <label class="modal-opt">
-        <input type="checkbox" id="pdf-reproduction">
-        <div class="modal-opt-info">
-          <div class="modal-opt-title">Reproduction</div>
-          <div class="modal-opt-desc">Gestations en cours et vêlages prévus</div>
-        </div>
-      </label>
+      <label class="modal-opt"><input type="checkbox" id="pdf-dashboard" checked><div class="modal-opt-info"><div class="modal-opt-title">Tableau de bord</div><div class="modal-opt-desc">KPIs, statistiques globales du troupeau</div></div></label>
+      <label class="modal-opt"><input type="checkbox" id="pdf-animaux" checked><div class="modal-opt-info"><div class="modal-opt-title">Liste des animaux</div><div class="modal-opt-desc">Tag, race, âge, poids, GMQ, statut</div></div></label>
+      <label class="modal-opt"><input type="checkbox" id="pdf-alertes" checked><div class="modal-opt-info"><div class="modal-opt-title">Alertes actives</div><div class="modal-opt-desc">Toutes les alertes en attente de traitement</div></div></label>
+      <label class="modal-opt"><input type="checkbox" id="pdf-reproduction"><div class="modal-opt-info"><div class="modal-opt-title">Reproduction</div><div class="modal-opt-desc">Gestations en cours et vêlages prévus</div></div></label>
     </div>
     <div class="modal-btns">
       <button class="btn-outline" onclick="closePdfModal()">Annuler</button>
@@ -767,7 +741,6 @@ function buildAChart(c,a){
   });
 }
 
-// ── DASHBOARD PANELS
 async function loadDashAlertes(){
   try{
     const data=await fetch(`${API}/api/alertes`).then(r=>r.json());
@@ -872,7 +845,7 @@ function renderAnimaux(data){
   const el=document.getElementById('animaux-tbl');
   if(!data.length){el.innerHTML='<p class="empty">Aucun animal trouvé</p>';return;}
   const rows=data.map(a=>`
-    <tr onclick="showGenealogy(\'${a.numero_tag}\')">
+    <tr onclick="showGenealogy('${a.numero_tag}')">
       <td><span class="tag-chip">${a.numero_tag}</span></td>
       <td>${a.nom||'—'}</td>
       <td>${a.race||'—'}</td>
@@ -918,10 +891,9 @@ async function loadGestationsPage(){
   }catch{document.getElementById('gest-grid').innerHTML='<p class="empty">Erreur de connexion</p>';}
 }
 
-// ── GENEALOGIE (BONUS)
+// ── GENEALOGIE
 function showGenealogy(tag){
-  // Navigate to genealogy and prefill
-  navigate('genealogie',document.querySelector('.nav-item:nth-child(7)'));
+  navigate('genealogie', document.getElementById('nav-genealogie'));
   document.getElementById('gene-input').value=tag;
   loadGenealogy();
 }
@@ -935,7 +907,6 @@ async function loadGenealogy(){
     const data=await fetch(`${API}/api/genealogie/${encodeURIComponent(tag)}`).then(r=>r.json());
     renderGenealogyTree(data,el);
   }catch{
-    // Fallback: chercher dans animauxData local
     const animal=animauxData.find(a=>a.numero_tag.toUpperCase()===tag.toUpperCase());
     if(animal){
       renderGenealogyTree({sujet:animal,mere:null,pere:null,descendants:[]},el);
@@ -948,59 +919,84 @@ async function loadGenealogy(){
 function renderGenealogyTree(data,el){
   const {sujet,mere,pere,descendants=[]}=data;
   if(!sujet){el.innerHTML='<p class="empty">Données généalogiques introuvables.</p>';return;}
-
   const nodeHtml=(a,isSubject=false)=>{
-    if(!a)return `<div class="gene-node" style="background:var(--gray-100);border-color:var(--gray-300);min-width:130px;text-align:center;padding:12px 18px;border-radius:10px;opacity:.5"><div class="gn-tag" style="font-size:11.5px;color:var(--gray-400)">inconnu</div><div class="gn-name" style="font-size:14px;font-weight:600">—</div></div>`;
+    if(!a)return `<div class="gene-node" style="opacity:.5"><div class="gn-tag">inconnu</div><div class="gn-name">—</div></div>`;
     return `<div class="gene-node${isSubject?' subject':''}">
       <div class="gn-tag">${a.numero_tag||''}</div>
       <div class="gn-name">${a.nom||a.numero_tag}</div>
       <div class="gn-info">${a.sexe==='F'?'Femelle':'Mâle'}${a.race?' · '+a.race:''}</div>
     </div>`;
   };
-
   let html=`<div class="gene-wrap">`;
-
-  // Parents row
   if(mere||pere){
-    html+=`<div class="gene-lbl" style="font-size:11px;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Parents</div>`;
-    html+=`<div class="gene-row" style="display:flex;gap:20px;align-items:center;justify-content:center">`;
+    html+=`<div class="gene-lbl">Parents</div><div class="gene-row">`;
     if(pere)html+=nodeHtml(pere);
     if(mere)html+=nodeHtml(mere);
-    html+=`</div>`;
-    html+=`<div style="width:2px;height:22px;background:var(--gray-300);margin:0 auto"></div>`;
+    html+=`</div><div style="width:2px;height:22px;background:var(--gray-300);margin:0 auto"></div>`;
   }
-
-  // Subject
-  html+=`<div class="gene-lbl">Animal</div>`;
-  html+=`<div class="gene-row">${nodeHtml(sujet,true)}</div>`;
-
-  // Descendants
+  html+=`<div class="gene-lbl">Animal</div><div class="gene-row">${nodeHtml(sujet,true)}</div>`;
   if(descendants.length>0){
     html+=`<div style="width:2px;height:22px;background:var(--gray-300);margin:0 auto"></div>`;
-    html+=`<div class="gene-lbl">Descendants (${descendants.length})</div>`;
-    html+=`<div class="gene-row" style="flex-wrap:wrap;max-width:700px">`;
+    html+=`<div class="gene-lbl">Descendants (${descendants.length})</div><div class="gene-row" style="flex-wrap:wrap;max-width:700px">`;
     descendants.forEach(d=>{html+=nodeHtml(d);});
     html+=`</div>`;
   }
-
   html+=`</div>`;
   el.innerHTML=html;
 }
 
-// ── CHAT
-function ask(q){document.getElementById('user-input').value=q;sendMessage();}
+// ══════════════════════════════════════════════
+// ── CHAT — CORRECTION PRINCIPALE
+// Le tableau de résultats est maintenant intégré
+// DANS la bulle du message bot, pas en dehors.
+// ══════════════════════════════════════════════
+const BOT_AV = `<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>`;
+const USER_AV = `<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>`;
 
-function addMessage(role,text,sql=null){
+function buildTableHtml(data){
+  if(!data||!data.length) return '';
+  const keys=Object.keys(data[0]);
+  const rows=data.map(row=>`<tr>${keys.map(k=>`<td>${row[k]??''}</td>`).join('')}</tr>`).join('');
+  return `<div class="results-tbl">
+    <table>
+      <thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function addMessage(role, text, sql=null, tableData=null){
   const box=document.getElementById('chat-messages');
   const div=document.createElement('div');
-  div.className='msg-row'+(role==='user'?' user':'');
-  const botAv=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>`;
-  const userAv=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>`;
+  const hasTable=tableData&&tableData.length>0;
   const sqlHtml=sql?`<div class="sql-block">${sql}</div>`:'';
-  div.innerHTML=`${role==='user'?userAv:botAv}<div><div class="bubble">${text}${sqlHtml}</div><div class="msg-time">À l'instant</div></div>`;
-  box.appendChild(div);box.scrollTop=box.scrollHeight;
+
+  if(hasTable){
+    // Tableau EN DEHORS de la bulle, mais dans le même bloc message
+    // La bulle contient le texte, le tableau prend toute la largeur dessous
+    div.className='msg-row has-table';
+    div.innerHTML=`<div class="msg-av-row">
+      ${BOT_AV}
+      <div>
+        <div class="bubble">${text}${sqlHtml}</div>
+        <div class="msg-time">À l'instant</div>
+      </div>
+    </div>
+    ${buildTableHtml(tableData)}`;
+  } else {
+    div.className='msg-row'+(role==='user'?' user':'');
+    div.innerHTML=`${role==='user'?USER_AV:BOT_AV}
+      <div>
+        <div class="bubble">${text}${sqlHtml}</div>
+        <div class="msg-time">À l'instant</div>
+      </div>`;
+  }
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
   return div;
 }
+
+function ask(q){document.getElementById('user-input').value=q;sendMessage();}
 
 async function confirmAction(yes){
   if(!pendingAction)return;
@@ -1011,11 +1007,8 @@ async function confirmAction(yes){
       const r=await fetch(`${API}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:'',confirm_action:true,pending_action:pendingAction})});
       const data=await r.json();
       document.querySelector('.msg-row:last-child')?.remove();
-      if(r.ok){
-  addMessage('bot','✅ '+(data.answer||'Action effectuée avec succès.'));
-}else{
-  addMessage('bot','❌ Erreur : '+(data.detail||'Action impossible.'));
-}
+      if(r.ok){addMessage('bot','✅ '+(data.answer||'Action effectuée avec succès.'));}
+      else{addMessage('bot','❌ Erreur : '+(data.detail||'Action impossible.'));}
     }catch{addMessage('bot','Erreur lors de l\'exécution.');}
     pendingAction=null;loadDashboard();loadDashAlertes();
   }else{
@@ -1031,36 +1024,42 @@ async function sendMessage(){
   addMessage('user',question);
   chatHistory.push({role:'user',content:question});
   const box=document.getElementById('chat-messages');
+
+  // Indicateur de frappe
   const ld=document.createElement('div');
   ld.className='msg-row';ld.id='ld-msg';
-  ld.innerHTML=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div><div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  ld.innerHTML=`${BOT_AV}<div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
   box.appendChild(ld);box.scrollTop=box.scrollHeight;
+
   try{
     const r=await fetch(`${API}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,history:chatHistory.slice(-6)})});
     const data=await r.json();
     document.getElementById('ld-msg')?.remove();
+
     if(data.type==='action_pending'){
       pendingAction=data.pending_action;
       const cDiv=document.createElement('div');
       cDiv.id='confirm-div';cDiv.className='msg-row';
-      cDiv.innerHTML=`<div class="msg-av"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
-        <div><div class="bubble">${data.answer||''}</div>
-        <div class="confirm-card"><p>${data.confirmation||'Confirmer cette action ?'}</p>
-        <div class="confirm-btns"><button class="btn-yes" onclick="confirmAction(true)">Confirmer</button><button class="btn-no" onclick="confirmAction(false)">Annuler</button></div></div>
-        <div class="msg-time">À l'instant</div></div>`;
+      cDiv.innerHTML=`${BOT_AV}
+        <div>
+          <div class="bubble">${data.answer||''}</div>
+          <div class="confirm-card">
+            <p>${data.confirmation||'Confirmer cette action ?'}</p>
+            <div class="confirm-btns">
+              <button class="btn-yes" onclick="confirmAction(true)">Confirmer</button>
+              <button class="btn-no" onclick="confirmAction(false)">Annuler</button>
+            </div>
+          </div>
+          <div class="msg-time">À l'instant</div>
+        </div>`;
       box.appendChild(cDiv);
-    }else{
-      const ct=data.count!==undefined?` <span style="font-size:12.5px;color:var(--gray-400)">(${data.count} résultat${data.count>1?'s':''})</span>`:'';
-      addMessage('bot',(data.answer||'')+ct,data.sql);
+    } else {
+      // ✅ CORRECTION : tableau intégré dans la bulle via addMessage
+      const ct=data.count!==undefined
+        ? ` <span style="font-size:12.5px;color:var(--gray-400)">(${data.count} résultat${data.count>1?'s':''})</span>`
+        : '';
+      addMessage('bot', (data.answer||'')+ct, data.sql, data.data);
       chatHistory.push({role:'assistant',content:data.answer});
-    }
-    if(data.data&&data.data.length>0){
-      const keys=Object.keys(data.data[0]);
-      const rows=data.data.map(row=>`<tr>${keys.map(k=>`<td>${row[k]??''}</td>`).join('')}</tr>`).join('');
-      const tDiv=document.createElement('div');
-      tDiv.className='results-tbl';
-      tDiv.innerHTML=`<table><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
-      box.appendChild(tDiv);
     }
     box.scrollTop=box.scrollHeight;
   }catch{
@@ -1069,7 +1068,7 @@ async function sendMessage(){
   }
 }
 
-// ── PDF EXPORT (BONUS)
+// ── PDF EXPORT
 function openPdfModal(){document.getElementById('pdf-modal').style.display='flex';}
 function closePdfModal(){document.getElementById('pdf-modal').style.display='none';}
 
@@ -1078,12 +1077,8 @@ async function generatePdf(){
   const inclDash=document.getElementById('pdf-dashboard').checked;
   const inclAnimaux=document.getElementById('pdf-animaux').checked;
   const inclAlertes=document.getElementById('pdf-alertes').checked;
-  const inclRepro=document.getElementById('pdf-reproduction').checked;
-
-  // Collect data
   let sections=[];
   const dateStr=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
-
   if(inclDash){
     const total=document.getElementById('s-actifs').textContent;
     const sante=document.getElementById('s-sante').textContent;
@@ -1097,7 +1092,6 @@ async function generatePdf(){
         <tr><td style="padding:8px;border:1px solid #e5e7eb">Alertes critiques</td><td style="padding:8px;border:1px solid #e5e7eb;font-weight:bold;color:#dc2626">${crit}</td></tr>
       </table>`);
   }
-
   if(inclAnimaux&&animauxData.length>0){
     const rows=animauxData.slice(0,50).map(a=>`<tr>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.numero_tag}</td>
@@ -1115,7 +1109,6 @@ async function generatePdf(){
         </tr></thead><tbody>${rows}</tbody>
       </table>`);
   }
-
   if(inclAlertes&&alertesData.length>0){
     const rows=alertesData.map(a=>`<tr>
       <td style="padding:7px 10px;border:1px solid #e5e7eb">${a.numero_tag||'—'}</td>
@@ -1130,21 +1123,14 @@ async function generatePdf(){
         </tr></thead><tbody>${rows}</tbody>
       </table>`);
   }
-
-  // Build printable window
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BoviBot – Rapport du ${dateStr}</title>
-    <style>
-      body{font-family:'Segoe UI',sans-serif;padding:40px;color:#111;max-width:900px;margin:0 auto}
-      h1{color:#1e5231;font-size:24px;margin-bottom:4px}
-      .sub{color:#6b7280;font-size:14px;margin-bottom:32px}
-      @media print{body{padding:20px}}
-    </style>
+    <style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#111;max-width:900px;margin:0 auto}h1{color:#1e5231;font-size:24px;margin-bottom:4px}.sub{color:#6b7280;font-size:14px;margin-bottom:32px}@media print{body{padding:20px}}</style>
   </head><body>
     <h1>BoviBot — Rapport d'élevage</h1>
-    <div class="sub">Généré le ${dateStr} · Amadou Diallo</div>
+    <div class="sub">Généré le ${dateStr}</div>
     ${sections.join('')}
-    <div style="margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af">BoviBot — Application de gestion bovine IA · ESP/UCAD Licence 3</div>
+    <div style="margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af">BoviBot — Application de gestion bovine IA</div>
     <script>window.onload=function(){window.print();}<\/script>
   </body></html>`);
   win.document.close();
@@ -1155,13 +1141,7 @@ function exportGenealogiePdf(){
   const tag=document.getElementById('gene-input').value||'Animal';
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Généalogie – ${tag}</title>
-    <style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#111}h1{color:#1e5231}
-    .gene-node{display:inline-block;background:#e8f5ee;border:2px solid #e8f5ee;border-radius:10px;padding:10px 16px;margin:4px;vertical-align:top}
-    .gene-node.subject{background:#c8e6d0;border-color:#1e5231}
-    .gn-tag{font-size:11px;color:#1e5231;margin-bottom:2px}
-    .gn-name{font-size:14px;font-weight:bold}
-    .gn-info{font-size:12px;color:#6b7280}
-    </style>
+    <style>body{font-family:'Segoe UI',sans-serif;padding:40px;color:#111}h1{color:#1e5231}.gene-node{display:inline-block;background:#e8f5ee;border:2px solid #e8f5ee;border-radius:10px;padding:10px 16px;margin:4px;vertical-align:top}.gene-node.subject{background:#c8e6d0;border-color:#1e5231}.gn-tag{font-size:11px;color:#1e5231;margin-bottom:2px}.gn-name{font-size:14px;font-weight:bold}.gn-info{font-size:12px;color:#6b7280}</style>
   </head><body>
     <h1>Arbre Généalogique — ${tag}</h1>
     <p style="color:#6b7280;font-size:13px">Généré le ${new Date().toLocaleDateString('fr-FR')}</p>
@@ -1186,7 +1166,7 @@ function applyDark(){
     lbl.textContent='Mode sombre';
   }
   Chart.defaults.color=darkMode?'#8aa4bf':'#6b7280';
-  if(rChart||aChart){buildRChart(0,0);buildAChart(0,0);loadDashboard();}
+  if(rChart||aChart){loadDashboard();}
 }
 function toggleDark(){darkMode=!darkMode;localStorage.setItem('bovibot-dark',darkMode?'1':'0');applyDark();}
 applyDark();
